@@ -12,13 +12,27 @@ knitr::opts_chunk$set(echo = TRUE)
 # Assignment 1
 Each exercise is worth 16 points.
 
-# Exercise 1
+## Exercise 1
 For each of parts (a) through (d), indicate whether we would generally expect the performance of a flexible statistical learning method to be better or worse than an inflexible method. Justify your answer.
 
+Before we answering the questions, we should know a inflexible method is a simple method; a flexible method is a complex method.
+
 The sample size n is extremely large, and the number of predictors p is small.
-- **Better**. The large number of observations is better because we can know more about the correlation between them. Also, the number of small predictors and large sample sizes can avoid a overfitting problem in a model.
+- **Better**. The large number of observations is better because we can know more about the detailed correlation between them. Also, the number of small predictors and large sample sizes may help to avoid a overfitting problem in a model.
+
 The number of predictors p is extremely large, and the number of observations n is small.
+- **Worse**. It is possible that not all predictors have a significant effect on the response variable. Overfitting and spurious correlation are phenomenons that affect data models with a large number of predictors, in which the data model performs well on training data but badly on test data. Plus, small sample sizes are not conducive to machine learning.
 
 The relationship between the predictors and response is highly non-linear.
+- **Better**. Because non-linearity allows predictors to be better fitted with the dependent variable.
 
 The variance of the error terms, is extremely high.
+- **Worse**. Because of the high variance, an algorithm may model the random noise training data rather than the expected outputs. High error terms would decrease the model's performance.
+
+### References:
+1. https://www.kdnuggets.com/2017/04/must-know-fewer-predictors-machine-learning-models.html
+2. https://stats.stackexchange.com/questions/69237/flexible-and-inflexible-models-in-machine-learning
+
+## Exercise 2
+Describe the difference between a parametric and non-parametric statistical learning approach. What are the advantages of a parametric approach to regression or classification (as opposed to a noon-parametric approach)? What are its disadvantages?
+
