@@ -32,7 +32,37 @@ The variance of the error terms, is extremely high.
 ### References:
 1. https://www.kdnuggets.com/2017/04/must-know-fewer-predictors-machine-learning-models.html
 2. https://stats.stackexchange.com/questions/69237/flexible-and-inflexible-models-in-machine-learning
+3. https://becominghuman.ai/machine-learning-bias-vs-variance-641f924e6c57
 
 ## Exercise 2
 Describe the difference between a parametric and non-parametric statistical learning approach. What are the advantages of a parametric approach to regression or classification (as opposed to a noon-parametric approach)? What are its disadvantages?
+
+
+## Exercise 5
+This question should be answered using the `biomass` data set.
+```{r}
+library(tidyverse)
+library(tidymodels)
+data("biomass")
+biomass
+```
+a. Fit a multiple regression model to predict `HHV` using `carbon`, `hydrogen` and `oxygen`.
+```{r}
+# create a parsnip specification
+linear_reg() %>%
+  set_mode("regression") %>%
+  set_engine("lm") -> lm_spec
+
+# fit the model using tidymodel
+lm_spec %>%
+  fit(HHV ~ carbon + hydrogen + oxygen, data = biomass) -> lm_fit
+
+
+lm_fit %>%
+  pluck("fit") %>%
+  summary()
+
+# Another way to see the summary table
+tidy(lm_fit)
+```
 
