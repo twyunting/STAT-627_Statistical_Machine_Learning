@@ -1,0 +1,122 @@
+---
+title: "Lab 01 - Hello R!"
+author: "Yunting Chiu"
+date: "5/17/2021"
+output: pdf_document
+---
+
+# Learning goals
+- Get acquainted with R and RStudio, which we will be using throughout the course to analyze data as well as to learn the statistical concepts discussed in the course.
+- Appreciate the value of visualization in exploring the relationship between variables.
+- Start using R for building plots and calculating summary statistics.
+
+# Terminology
+We’ve already thrown around a few new terms, so let’s define them before we proceed.
+- **R**: Name of the programming language we will be using throughout the course.
+- **RStudio**: An integrated development environment for R. In other words, a convenient interface for writing and running R code.
+I like to think of R as the engine of the car, and RStudio is the dashboard.
+
+# Starting slow
+As the labs progress, you are encouraged to explore beyond what the labs dictate; a willingness to experiment will make you a much better programmer. Before we get to that stage, however, you need to build some basic fluency in R. Today we begin with the fundamental building blocks of R and RStudio: the interface, reading in data, and basic commands.
+
+And to make versioning simpler, this is a solo lab. Additionally, we want to make sure everyone gets a significant amount of time at the steering wheel.
+
+# Getting started
+
+# Download R
+
+### If you don’t have R installed
+Go to the [CRAN](https://cran.r-project.org/) and download R, make sure you get the version that matches your operating system.
+
+### If you have R installed
+If you have R installed run the following code
+```{r}
+R.version
+```
+This should tell you what version of R you are currently using. If your R version is lower then 3.6.0 I would strongly recommend updating. In general it is a good idea to update your R version, unless you have a project right now that depend on a specific version of R.
+
+# Download RStudio
+We recommend using RStudio as your IDE if you don’t already have it installed. You can go to the [RStudio](https://www.rstudio.com/products/rstudio/download/) website to download and install the software.
+
+# Launch RStudio
+You can also open the RStudio application first and then create a project by going\
+  ```file -> new project...```
+
+# Create a new Rmarkdown file
+  ```file -> new file -> R markdown...```
+
+# Hello RStudio!
+RStudio is comprised of four panes.
+
+- On the bottom left is the Console, this is where you can write code that will be evaluated. Try typing 2 + 2 here and hit enter, what do you get?\
+Ans: I will get 4.
+```{r}
+test <- 2 + 2
+test
+```
+
+
+- On the bottom right is the Files pane, as well as other panes that will come handy as we start our analysis.
+
+- If you click on a file, it will open in the editor, on the top left pane.
+
+- Finally, the top right pane shows your Environment. If you define a variable it would show up there. Try typing x <- 2 in the Console and hit enter, what do you get in the Environment pane?
+Ans: I will see the integer **2** in the global environment.
+```{r}
+x <- 2
+```
+# Packages
+R is an open-source language, and developers contribute functionality to R via packages. In this lab we will work with three packages: `palmerpenguins` which contains the dataset, and `tidyverse` which is a collection of packages for doing data analysis in a “tidy” way.
+
+Load these packages by running the following in the Console.
+- Reference: https://github.com/tidymodels/parsnip
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(palmerpenguins)
+# install.packages("devtools")
+# devtools::install_github("tidymodels/parsnip")
+# install.packages("parsnip")
+```
+
+If you haven’t installed these packages yet and R complains, then you can install these packages by running the following command. (Note that R package names are case-sensitive)
+```{r}
+# install.packages(c("tidyverse", "palmerpenguins"))
+```
+Note that the packages are also loaded with the same commands in your R Markdown document.
+
+# Warm up
+Before we introduce the data, let’s warm up with some simple exercises.
+
+The top portion of your R Markdown file (between the three dashed lines) is called YAML. It stands for “YAML Ain’t Markup Language”. It is a human friendly data serialization standard for all programming languages. All you need to know is that this area is called the YAML (we will refer to it as such) and that it contains meta information about your document.
+
+# YAML
+Open the R Markdown (Rmd) file in your project, change the author name to your name, and knit the document.
+
+# Data 
+The data frame we will be working with today is called penguins and it’s in the palmerpenguins package.\
+- count the number of `species` and `islands` with `dplyr::count()`
+```{r}
+penguins %>%
+  count(species, island)
+```
+Visualize the distribution of `body_mass_g` with ggplot
+```{r}
+penguins %>%
+  ggplot(aes(body_mass_g)) +
+  geom_histogram() +
+  theme_bw()
+```
+Look at the correlation between `body_mass_g` and some of the other variables
+```{r}
+ggplot(penguins, aes(body_mass_g, flipper_length_mm)) +
+  geom_point() +
+  ggtitle("body_mass_g vs flipper_length_mm")
+```
+```{r}
+ggplot(penguins, aes(body_mass_g, bill_depth_mm)) +
+  geom_point() +
+  ggtitle("body_mass_g vs bill_depth_mm")
+```
+# Modeling
+
