@@ -1,8 +1,11 @@
 ---
 title: "Lab 01 - Hello R!"
 author: "Yunting Chiu"
-date: "5/17/2021"
-output: pdf_document
+date: "`r Sys.Date()`"
+output: 
+  pdf_document: 
+    highlight: zenburn
+urlcolor: "blue"
 ---
 
 # Learning goals
@@ -118,5 +121,20 @@ ggplot(penguins, aes(body_mass_g, bill_depth_mm)) +
   geom_point() +
   ggtitle("body_mass_g vs bill_depth_mm")
 ```
+
 # Modeling
+Fit a linear model using `parsnip` to model `body_mass_g`
+```{r}
+lm_spec <- linear_reg() %>%
+  set_engine("lm")
+
+lm_fit <- lm_spec %>%
+  fit(body_mass_g ~ species + island + bill_length_mm + bill_depth_mm + flipper_length_mm, 
+      data = penguins)
+lm_fit
+```
+Get parameter estimates:
+```{r echo=TRUE, fig.height=3, fig.width=6, warning=FALSE, paged.print=TRUE}
+tidy(lm_fit)
+```
 
