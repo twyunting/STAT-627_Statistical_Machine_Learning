@@ -7,6 +7,9 @@ output:
     highlight: zenburn
 urlcolor: "blue"
 ---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
 # Learning goals
 - Get acquainted with R and RStudio, which we will be using throughout the course to analyze data as well as to learn the statistical concepts discussed in the course.
@@ -33,6 +36,7 @@ Go to the [CRAN](https://cran.r-project.org/) and download R, make sure you get 
 
 ### If you have R installed
 If you have R installed run the following code
+- We can see my R Version is  4.0.2.
 ```{r}
 R.version
 ```
@@ -101,7 +105,8 @@ The data frame we will be working with today is called penguins and it’s in th
 - count the number of `species` and `islands` with `dplyr::count()`
 ```{r}
 penguins %>%
-  count(species, island)
+  count(species, island) %>%
+  rename(count = n)
 ```
 Visualize the distribution of `body_mass_g` with ggplot
 ```{r}
