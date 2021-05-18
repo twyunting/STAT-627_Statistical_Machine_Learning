@@ -1,0 +1,24 @@
+---
+title: "STAT-627 Assignment 1"
+author: "Yunting Chiu"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Assignment 1
+Each exercise is worth 16 points.
+
+# Exercise 1
+For each of parts (a) through (d), indicate whether we would generally expect the performance of a flexible statistical learning method to be better or worse than an inflexible method. Justify your answer.
+
+The sample size n is extremely large, and the number of predictors p is small.
+- **Better**. The large number of observations is better because we can know more about the correlation between them. Also, the number of small predictors and large sample sizes can avoid a overfitting problem in a model.
+The number of predictors p is extremely large, and the number of observations n is small.
+
+The relationship between the predictors and response is highly non-linear.
+
+The variance of the error terms, is extremely high.
