@@ -1,0 +1,66 @@
+---
+title: "Labs02 - Week 1"
+author: "Yunting Chiu"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise 1 - Simple linear regression
+a. Load the data biomass and plot HHV as a function of carbon.
+```{r}
+library(tidymodels)
+# or run console table with "remotes::install_github("tidymodels/parsnip")"
+data("biomass") # in model.data package
+head(biomass)
+
+# plot
+biomass %>%
+ggplot(aes(x = carbon, y = HHV)) +
+  geom_point()
+```
+
+b. Fit a simple linear regression model to the data. With HHV as the response and carbon as the predictor. Is it a good fit?
+- 
+```{r}
+# create a parsnip specification
+linear_reg() %>%
+  set_mode("regression") %>%
+  set_engine("lm") -> lm_spec
+
+# fit the model
+lm_spec %>%
+  fit(HHV ~ carbon, data = biomass)  -> lm_fit
+
+# see the summary table
+lm_fit %>%
+  pluck("fit") %>%
+  summary()
+# another way to call summary table
+# lm_fit$fit %>% summary()
+```
+
+c. Use the model to predict what the HHV of samples with carbon = 10, 20, ..., 80.
+```{r}
+
+```
+
+d. Produce diagnostics plots. You can use plot() on the $fit object to produce some diagnostics.
+```{r}
+
+```
+
+# Exercise 2 - Multiple linear regression
+a. Fit a linear regression model to the data. With HHV as the response and carbon and hydrogen as the predictor. How is the fit compared to the simple linear model?
+```{r}
+
+```
+
+b. Fit a linear regression model to the data. With HHV as the response and all the molecules as the predictor. How is the fit compared to the previous models?
+```{r}
+
+```
+
