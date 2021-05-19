@@ -44,7 +44,8 @@ This question should be answered using the `biomass` data set.
 library(tidyverse)
 library(tidymodels)
 data("biomass")
-biomass
+biomass %>%
+  head()
 ```
 a. Fit a multiple regression model to predict `HHV` using `carbon`, `hydrogen` and `oxygen`.
 ```{r}
@@ -64,5 +65,31 @@ lm_fit %>%
 
 # Another way to see the summary table
 tidy(lm_fit)
+
+# predict HHV variable
+predict(lm_fit, new_data = biomass) 
 ```
 
+b. Provide an interpretation of each coefficient in the model. Be careful, note the values `Cruise` is able to take.
+```{r}
+lm_fit %>%
+  pluck("fit") %>%
+  summary()
+```
+
+c. Write out the model in equation form.
+$$
+\hat{HHV} = 1.0456860 + 0.3478508carbon + 0.2430900hydrogen - 0.0003767oxygen
+$$
+
+d. For which the predictors can you reject the null hypothesis H0:$\beta j=0$?
+
+Hypothesis test: H0: $\beta j=0$ vs Ha: $\beta j \neq{0}$
+
+The p-value of $b_1$ and $b_2$ is less than 2e-16 and 0.0000986, so we have evidence to reject the null hypothesis in favor of the alternative hypothesis, meaning that $b_1$ and $b_2$ are not equal to 0. Thus, predictor `carbon` and `hydrogen` can be rejected the null hypothesis. 
+
+e. On the basis of your response to the previous question, fit a smaller model that only uses the predictors for which there is evidence of association with the outcome.
+
+Based on the result from 5d, we consider removing the 
+
+f. How well do the models in (a) and (e) fit the data? How big was the effect of removing the predictor?
