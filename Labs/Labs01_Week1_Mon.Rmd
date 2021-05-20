@@ -1,5 +1,5 @@
 ---
-title: "Lab 01 - Hello R!"
+title: "Labs 01 - Week1 Monday"
 author: "Yunting Chiu"
 date: "`r Sys.Date()`"
 output: 
@@ -18,8 +18,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Terminology
 We’ve already thrown around a few new terms, so let’s define them before we proceed.
+
 - **R**: Name of the programming language we will be using throughout the course.
 - **RStudio**: An integrated development environment for R. In other words, a convenient interface for writing and running R code.
+
 I like to think of R as the engine of the car, and RStudio is the dashboard.
 
 # Starting slow
@@ -75,7 +77,7 @@ x <- 2
 # Packages
 R is an open-source language, and developers contribute functionality to R via packages. In this lab we will work with three packages: `palmerpenguins` which contains the dataset, and `tidyverse` which is a collection of packages for doing data analysis in a “tidy” way.
 
-Load these packages by running the following in the Console.
+Load these packages by running the following in the Console.\
 - Reference: https://github.com/tidymodels/parsnip
 ```{r}
 library(tidyverse)
