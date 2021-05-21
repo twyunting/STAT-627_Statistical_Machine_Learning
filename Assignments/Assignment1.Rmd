@@ -2,7 +2,12 @@
 title: "STAT-627 Assignment 1"
 author: "Yunting Chiu"
 date: "`r Sys.Date()`"
-output: pdf_document
+output:
+  html_document: 
+    number_sections: yes
+    highlight: pygments
+    theme: cerulean
+urlcolor: blue
 ---
 
 ```{r setup, include=FALSE}
@@ -18,15 +23,19 @@ For each of parts (a) through (d), indicate whether we would generally expect th
 Before we answering the questions, we should know a inflexible method is a simple method; a flexible method is a complex method.
 
 The sample size n is extremely large, and the number of predictors p is small.
-- **Better**. The large number of observations is better because we can know more about the detailed correlation between them. Also, the number of small predictors and large sample sizes may help to avoid a overfitting problem in a model.
+
+- **Better**. The large number of observations is better because we can know more about the detailed correlation between them. Also, the number of small predictors and large sample sizes may help to avoid a overfitting problem and reduce the bias.
 
 The number of predictors p is extremely large, and the number of observations n is small.
-- **Worse**. It is possible that not all predictors have a significant effect on the response variable. Overfitting and spurious correlation are phenomenons that affect data models with a large number of predictors, in which the data model performs well on training data but badly on test data. Plus, small sample sizes are not conducive to machine learning.
+
+- **Worse**. It is possible that not all predictors have a significant effect on the response variable. Overfitting and spurious correlation are phenomenons that affect data models with a large number of predictors, in which the data model performs well on training data but badly on test data. Furthermore, small sample sizes and too many predictors will result in high variance.
 
 The relationship between the predictors and response is highly non-linear.
-- **Better**. Because non-linearity allows predictors to be better fitted with the dependent variable.
+
+- **Better**. If there are too many limits, just a few types of trends are conceivable, which may not convey the underlying nonlinear relationship. A better fit will result from having more degrees of freedom. Therefore, non-linearity allows predictors to be better fitted with the dependent variable.
 
 The variance of the error terms, is extremely high.
+
 - **Worse**. Because of the high variance, an algorithm may model the random noise training data rather than the expected outputs. High error terms would decrease the model's performance.
 
 ### References:
@@ -35,7 +44,64 @@ The variance of the error terms, is extremely high.
 3. https://becominghuman.ai/machine-learning-bias-vs-variance-641f924e6c57
 
 ## Exercise 2
-Describe the difference between a parametric and non-parametric statistical learning approach. What are the advantages of a parametric approach to regression or classification (as opposed to a noon-parametric approach)? What are its disadvantages?
+Describe the difference between a parametric and non-parametric statistical learning approach. What are the advantages of a parametric approach to regression or classification (as opposed to a non-parametric approach)? What are its disadvantages?
+
+## Exercise 3
+Carefully explain the the difference between the KNN classifier and KNN regression methods. Name a downside when using this model on very large data.
+
+
+
+## Exercise 4
+Suppose we have a data set with five predictors, $X1$= GPA, $X2$= extracurricular activities (EA), $X3$= Gender (1 for Female and 0 for Male), $X4$= Interaction between GPA and EA, and $X5$= Interaction between GPA and Gender. The response is starting salary after graduation (in thousands of dollars). Suppose we use least squares to fit the model, and get $\beta_0$ = 50, $\beta_1$ = 20, $\beta_2$ = 0.07, $\beta_3$ = 35, $\beta_4$ = 0.01, $\beta_5$ = −10.
+
+The regression equation should be:
+$$
+\hat{salary} = 50 + 20GPA + 0.07EA + 35Gender + 0.01GPA*EA -10GPA*Gender
+$$
+
+As `Gender` is a dummy variable, the equation for females and males should be:
+
+**Female**: gender is 1
+$$
+\hat{salary} = 50 + 20GPA + 0.07EA + 35 + 0.01GPA*EA -10GPA*Gender
+$$
+$$
+\hat{salary} = 85 + 10GPA + 0.07EA + 0.01GPA*EA
+$$
+
+**Male**: gender is 0
+$$
+\hat{salary} = 50 + 20GPA + 0.07EA + 0.01GPA*EA 
+$$
+In other words, the difference between female and male is:
+$$
+female - male = (85 + 10GPA + 0.07EA + 0.01GPA*EA) - (50 + 20GPA + 0.07EA + 0.01GPA*EA)
+$$
+$$
+female - male = 35 - 10GPA
+$$
+a. Which answer is correct, and why?
+    1. For a fixed value of EA and GPA, males earn more on average than females.
+    2. For a fixed value of EA and GPA, females earn more on average than males.
+    3. For a fixed value of EA and GPA, males earn more on average than females provided that the GPA is high enough.
+    4. For a fixed value of EA and GPA, females earn more on average than males provided that the GPA is high enough.
+
+Ans: (3) is correct. 
+
+b. Predict the salary of a female with EA of 110 and a GPA of 4.0.
+
+Ans: 137,100 dollars.
+```{r}
+EA <- 110
+GPA <- 4
+f_salary <- (85 + 10*GPA + 0.07*EA + 0.01*GPA*EA) * 1000 # in thousand dollars
+f_salary 
+```
+
+
+c. True or false: Since the coefficient for the GPA/EA interaction term is very small, there is very
+little evidence of an interaction effect. Justify your answer.
+
 
 
 ## Exercise 5
@@ -64,9 +130,9 @@ lm_fit %>%
   summary()
 
 # Another way to see the summary table
-tidy(lm_fit)
+# tidy(lm_fit)
 
-# predict HHV variable
+# predict HHV variable by using the `lm_fit` linear model
 predict(lm_fit, new_data = biomass) 
 ```
 
@@ -82,7 +148,7 @@ $$
 \hat{HHV} = 1.0456860 + 0.3478508carbon + 0.2430900hydrogen - 0.0003767oxygen
 $$
 
-d. For which the predictors can you reject the null hypothesis H0:$\beta j=0$?
+d. For which the predictors can you reject the null hypothesis H0:$\beta_j = 0$?
 
 Hypothesis test: H0: $\beta j=0$ vs Ha: $\beta j \neq{0}$
 
@@ -90,6 +156,14 @@ The p-value of $b_1$ and $b_2$ is less than 2e-16 and 0.0000986, so we have evid
 
 e. On the basis of your response to the previous question, fit a smaller model that only uses the predictors for which there is evidence of association with the outcome.
 
-Based on the result from 5d, we consider removing the 
+We consider removing the predictor that does not meet the significance level based on the results of 5a. That is, we should eliminate the variable `oxygen` (because of no impact) then re-fit the linear model. 
+```{r}
+lm_spec %>%
+  fit(HHV ~ carbon + hydrogen, data = biomass) -> lm_new_fit
+
+lm_new_fit$fit %>%
+  summary()
+```
 
 f. How well do the models in (a) and (e) fit the data? How big was the effect of removing the predictor?
+
