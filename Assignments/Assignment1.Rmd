@@ -101,7 +101,7 @@ f_salary
 
 c. True or false: Since the coefficient for the GPA/EA interaction term is very small, there is very
 little evidence of an interaction effect. Justify your answer.
-
+- This is **false**. A small value of coefficient does not imply that the interaction term has a minor influence. The statistical significance of the coefficient can be determined by looking at the p-value in the coefficient table.
 
 
 ## Exercise 5
