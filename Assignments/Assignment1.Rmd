@@ -46,6 +46,8 @@ The variance of the error terms, is extremely high.
 ## Exercise 2
 Describe the difference between a parametric and non-parametric statistical learning approach. What are the advantages of a parametric approach to regression or classification (as opposed to a non-parametric approach)? What are its disadvantages?
 
+
+
 ## Exercise 3
 Carefully explain the the difference between the KNN classifier and KNN regression methods. Name a downside when using this model on very large data.
 
@@ -80,17 +82,17 @@ $$
 $$
 female - male = 35 - 10GPA
 $$
-a. Which answer is correct, and why?
-    1. For a fixed value of EA and GPA, males earn more on average than females.
-    2. For a fixed value of EA and GPA, females earn more on average than males.
-    3. For a fixed value of EA and GPA, males earn more on average than females provided that the GPA is high enough.
+a. Which answer is correct, and why?\
+    1. For a fixed value of EA and GPA, males earn more on average than females.\
+    2. For a fixed value of EA and GPA, females earn more on average than males.\
+    3. For a fixed value of EA and GPA, males earn more on average than females provided that the GPA is high enough.\
     4. For a fixed value of EA and GPA, females earn more on average than males provided that the GPA is high enough.
 
-Ans: (3) is correct. 
+- (3) is correct. Because the expected salary of female subtract male is 35 - 10 * GPA, we can know the female earn more **35 - 10 * mean(GPA)** than male. According to the **female-male equation**, as the average GPA rises, the female will earn less. In conclusion, men will earn more than women if their GPA is higher.
 
 b. Predict the salary of a female with EA of 110 and a GPA of 4.0.
 
-Ans: 137,100 dollars.
+- 137,100 dollars.
 ```{r}
 EA <- 110
 GPA <- 4
@@ -101,8 +103,8 @@ f_salary
 
 c. True or false: Since the coefficient for the GPA/EA interaction term is very small, there is very
 little evidence of an interaction effect. Justify your answer.
-- This is **false**. A small value of coefficient does not imply that the interaction term has a minor influence. The statistical significance of the coefficient can be determined by looking at the p-value in the coefficient table.
 
+- This is **false**. A small value of coefficient does not imply that the interaction term has a minor influence. The statistical significance of the coefficient can be determined by looking at the p-value in the coefficient table.
 
 ## Exercise 5
 This question should be answered using the `biomass` data set.
@@ -123,7 +125,6 @@ linear_reg() %>%
 # fit the model using tidymodel
 lm_spec %>%
   fit(HHV ~ carbon + hydrogen + oxygen, data = biomass) -> lm_fit
-
 
 lm_fit %>%
   pluck("fit") %>%
@@ -152,7 +153,7 @@ d. For which the predictors can you reject the null hypothesis H0:$\beta_j = 0$?
 
 Hypothesis test: H0: $\beta j=0$ vs Ha: $\beta j \neq{0}$
 
-The p-value of $b_1$ and $b_2$ is less than 2e-16 and 0.0000986, so we have evidence to reject the null hypothesis in favor of the alternative hypothesis, meaning that $b_1$ and $b_2$ are not equal to 0. Thus, predictor `carbon` and `hydrogen` can be rejected the null hypothesis. 
+The p-value of $b_1$ and $b_2$ is 2e-16 and 0.0000986, so we have evidence to reject the null hypothesis in favor of the alternative hypothesis, meaning that $b_1$ and $b_2$ are not equal to 0. Thus, predictor `carbon` and `hydrogen` can be rejected the null hypothesis. 
 
 e. On the basis of your response to the previous question, fit a smaller model that only uses the predictors for which there is evidence of association with the outcome.
 
@@ -166,4 +167,6 @@ lm_new_fit$fit %>%
 ```
 
 f. How well do the models in (a) and (e) fit the data? How big was the effect of removing the predictor?
+
+
 
