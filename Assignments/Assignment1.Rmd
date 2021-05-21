@@ -153,7 +153,7 @@ d. For which the predictors can you reject the null hypothesis H0:$\beta_j = 0$?
 
 Hypothesis test: H0: $\beta j=0$ vs Ha: $\beta j \neq{0}$
 
-The p-value of $b_1$ and $b_2$ is 2e-16 and 0.0000986, so we have evidence to reject the null hypothesis in favor of the alternative hypothesis, meaning that $b_1$ and $b_2$ are not equal to 0. Thus, predictor `carbon` and `hydrogen` can be rejected the null hypothesis. 
+The p-value of $b_1$ and $b_2$ is 2e-16 and 0.0000986, so we have evidence to reject the null hypothesis in favor of the alternative hypothesis, meaning that $b_1$ and $b_2$ are not equal to 0. Thus, predictor `carbon` and `hydrogen` have an impact on `HHV`, when holding `oxygen` constant.
 
 e. On the basis of your response to the previous question, fit a smaller model that only uses the predictors for which there is evidence of association with the outcome.
 
