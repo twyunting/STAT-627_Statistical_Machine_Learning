@@ -168,5 +168,6 @@ lm_new_fit$fit %>%
 
 f. How well do the models in (a) and (e) fit the data? How big was the effect of removing the predictor?
 
+The intercept and `oxygen` are not significant in the **5a** model, but all of the predictors and the intercept are significant in the **5e** model. Plus, the adjusted R-squared is 0.8509 in 5a, which is less than the adjusted R-squared in 5e (0.8512). As a result, removing the predictor `oxygen` is a wise decision.
 
 

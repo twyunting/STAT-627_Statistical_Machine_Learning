@@ -11,7 +11,7 @@
 
 <meta name="author" content="Yunting Chiu" />
 
-<meta name="date" content="2021-05-21" />
+<meta name="date" content="2021-05-22" />
 
 <title>STAT-627 Assignment 1</title>
 
@@ -440,7 +440,7 @@ summary {
 
 <h1 class="title toc-ignore">STAT-627 Assignment 1</h1>
 <h4 class="author">Yunting Chiu</h4>
-<h4 class="date">2021-05-21</h4>
+<h4 class="date">2021-05-22</h4>
 
 </div>
 
@@ -508,11 +508,17 @@ female - male = 35 - 10GPA
 2. For a fixed value of EA and GPA, females earn more on average than males.<br />
 3. For a fixed value of EA and GPA, males earn more on average than females provided that the GPA is high enough.<br />
 4. For a fixed value of EA and GPA, females earn more on average than males provided that the GPA is high enough.</p>
-<p>Ans: (3) is correct.</p>
+<ul>
+<li><ol start="3" style="list-style-type: decimal">
+<li>is correct. Because the expected salary of female subtract male is 35 - 10 * GPA, we can know the female earn more <strong>35 - 10 * mean(GPA)</strong> than male. According to the <strong>female-male equation</strong>, as the average GPA rises, the female will earn less. In conclusion, men will earn more than women if their GPA is higher.</li>
+</ol></li>
+</ul>
 <ol start="2" style="list-style-type: lower-alpha">
 <li>Predict the salary of a female with EA of 110 and a GPA of 4.0.</li>
 </ol>
-<p>Ans: 137,100 dollars.</p>
+<ul>
+<li>137,100 dollars.</li>
+</ul>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>EA &lt;-<span class="st"> </span><span class="dv">110</span></span>
 <span id="cb1-2"><a href="#cb1-2"></a>GPA &lt;-<span class="st"> </span><span class="dv">4</span></span>
 <span id="cb1-3"><a href="#cb1-3"></a>f_salary &lt;-<span class="st"> </span>(<span class="dv">85</span> <span class="op">+</span><span class="st"> </span><span class="dv">10</span><span class="op">*</span>GPA <span class="op">+</span><span class="st"> </span><span class="fl">0.07</span><span class="op">*</span>EA <span class="op">+</span><span class="st"> </span><span class="fl">0.01</span><span class="op">*</span>GPA<span class="op">*</span>EA) <span class="op">*</span><span class="st"> </span><span class="dv">1000</span> <span class="co"># in thousand dollars</span></span>
@@ -573,10 +579,9 @@ female - male = 35 - 10GPA
 <span id="cb13-7"><a href="#cb13-7"></a>lm_spec <span class="op">%&gt;%</span></span>
 <span id="cb13-8"><a href="#cb13-8"></a><span class="st">  </span><span class="kw">fit</span>(HHV <span class="op">~</span><span class="st"> </span>carbon <span class="op">+</span><span class="st"> </span>hydrogen <span class="op">+</span><span class="st"> </span>oxygen, <span class="dt">data =</span> biomass) -&gt;<span class="st"> </span>lm_fit</span>
 <span id="cb13-9"><a href="#cb13-9"></a></span>
-<span id="cb13-10"><a href="#cb13-10"></a></span>
-<span id="cb13-11"><a href="#cb13-11"></a>lm_fit <span class="op">%&gt;%</span></span>
-<span id="cb13-12"><a href="#cb13-12"></a><span class="st">  </span><span class="kw">pluck</span>(<span class="st">&quot;fit&quot;</span>) <span class="op">%&gt;%</span></span>
-<span id="cb13-13"><a href="#cb13-13"></a><span class="st">  </span><span class="kw">summary</span>()</span></code></pre></div>
+<span id="cb13-10"><a href="#cb13-10"></a>lm_fit <span class="op">%&gt;%</span></span>
+<span id="cb13-11"><a href="#cb13-11"></a><span class="st">  </span><span class="kw">pluck</span>(<span class="st">&quot;fit&quot;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb13-12"><a href="#cb13-12"></a><span class="st">  </span><span class="kw">summary</span>()</span></code></pre></div>
 <pre><code>## 
 ## Call:
 ## stats::lm(formula = HHV ~ carbon + hydrogen + oxygen, data = data)
@@ -649,7 +654,7 @@ female - male = 35 - 10GPA
 <li><p>For which the predictors can you reject the null hypothesis H0:<span class="math inline">\(\beta_j = 0\)</span>?</p></li>
 </ol>
 <p>Hypothesis test: H0: <span class="math inline">\(\beta j=0\)</span> vs Ha: <span class="math inline">\(\beta j \neq{0}\)</span></p>
-<p>The p-value of <span class="math inline">\(b_1\)</span> and <span class="math inline">\(b_2\)</span> is less than 2e-16 and 0.0000986, so we have evidence to reject the null hypothesis in favor of the alternative hypothesis, meaning that <span class="math inline">\(b_1\)</span> and <span class="math inline">\(b_2\)</span> are not equal to 0. Thus, predictor <code>carbon</code> and <code>hydrogen</code> can be rejected the null hypothesis.</p>
+<p>The p-value of <span class="math inline">\(b_1\)</span> and <span class="math inline">\(b_2\)</span> is 2e-16 and 0.0000986, so we have evidence to reject the null hypothesis in favor of the alternative hypothesis, meaning that <span class="math inline">\(b_1\)</span> and <span class="math inline">\(b_2\)</span> are not equal to 0. Thus, predictor <code>carbon</code> and <code>hydrogen</code> have an impact on <code>HHV</code>, when holding <code>oxygen</code> constant.</p>
 <ol start="5" style="list-style-type: lower-alpha">
 <li>On the basis of your response to the previous question, fit a smaller model that only uses the predictors for which there is evidence of association with the outcome.</li>
 </ol>
@@ -681,6 +686,7 @@ female - male = 35 - 10GPA
 <ol start="6" style="list-style-type: lower-alpha">
 <li>How well do the models in (a) and (e) fit the data? How big was the effect of removing the predictor?</li>
 </ol>
+<p>The intercept and <code>oxygen</code> are not significant in the <strong>5a</strong> model, but all of the predictors and the intercept are significant in the <strong>5e</strong> model. Plus, the adjusted R-squared is 0.8509 in 5a, which is less than the the adjusted R-squared in 5e (0.8512). As a result, removing the predictor <code>oxygen</code> is a wise decision.</p>
 </div>
 </div>
 
