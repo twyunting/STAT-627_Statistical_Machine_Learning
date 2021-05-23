@@ -102,7 +102,7 @@ a. Which answer is correct, and why?\
     3. For a fixed value of EA and GPA, males earn more on average than females provided that the GPA is high enough.\
     4. For a fixed value of EA and GPA, females earn more on average than males provided that the GPA is high enough.
 
-- (3) is correct. Because the expected salary of female subtract male is 35 - 10 * GPA, we can know the female earn more **35 - 10 * mean(GPA)** than male. According to the **female-male equation**, as the average GPA rises, the female will earn less. In conclusion, men will earn more than women if their GPA is higher.
+- **3** is correct. Because the expected salary of female subtract male is 35 - 10 * GPA, we can know the female earn more **35 - 10 * mean(GPA)** than male. According to the **female-male equation**, as the average GPA rises, the female will earn less. In conclusion, men will earn more than women if their GPA is higher.
 
 b. Predict the salary of a female with EA of 110 and a GPA of 4.0.
 
