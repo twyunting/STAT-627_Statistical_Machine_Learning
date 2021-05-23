@@ -13,11 +13,7 @@ urlcolor: blue
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
-# Assignment 1
-Each exercise is worth 16 points.
-
-## Exercise 1
+# Exercise 1
 For each of parts (a) through (d), indicate whether we would generally expect the performance of a flexible statistical learning method to be better or worse than an inflexible method. Justify your answer.
 
 Before we answering the questions, we should know a inflexible method is a simple method; a flexible method is a complex method.
@@ -38,22 +34,40 @@ The variance of the error terms, is extremely high.
 
 - **Worse**. Because of the high variance, an algorithm may model the random noise training data rather than the expected outputs. High error terms would decrease the model's performance.
 
-### References:
+## References:
 1. https://www.kdnuggets.com/2017/04/must-know-fewer-predictors-machine-learning-models.html
 2. https://stats.stackexchange.com/questions/69237/flexible-and-inflexible-models-in-machine-learning
 3. https://becominghuman.ai/machine-learning-bias-vs-variance-641f924e6c57
 
-## Exercise 2
+# Exercise 2
 Describe the difference between a parametric and non-parametric statistical learning approach. What are the advantages of a parametric approach to regression or classification (as opposed to a non-parametric approach)? What are its disadvantages?
 
+Parametric statistical approaches rely on assumptions about the underlying population's distribution shape (i.e., a normal distribution) and the assumed distribution's form or parameters (i.e., means and standard deviations). Nonparametric statistical approaches make few or no assumptions on the form of the population distribution from which the sample was taken. In other words, the distinction between parametric and non-parametric statistical learning approaches is based on assumptions. 
 
+a. Advantages of parametric statistical learning: Easy to figure out. If the each group is distinct, the parametric method can be highly effective.
+b. Disadvantages of parametric statistical learning: If the data does not meet the assumptions, the parametric method could lead to incorrect conclusions. The assumption part is very important in parametric approaches. If the data is unable to overcome the assumption obstacle, consider transforming the data as a remedy. Also, small sample size (n < 30) is not good for parametric methods.
+c. Advantages of non-parametric statistical learning: A good choice for data with a small sample size. There is no need to pass any assumption tasks ahead of time.
+d. Disadvantages of non-parametric statistical learning: If the data is surely normal, non-parametric have less power for the sample size than parametric methods. Plus, non-parametric processes can likewise be more difficult to interpret than parametric processes.
 
-## Exercise 3
+## References
+1. https://www.mayo.edu/research/documents/parametric-and-nonparametric-demystifying-the-terms/doc-20408960
+2. https://www.thoughtco.com/parametric-and-nonparametric-methods-3126411
+
+# Exercise 3
 Carefully explain the the difference between the KNN classifier and KNN regression methods. Name a downside when using this model on very large data.
 
+In KNN classification algorithm, the user wants to compute a categorical value, which is represented by an integer. For example, similarly to a dummy variable, we set 0 as male and 1 as female. The KNN classification algorithm will examine the k closest neighbors of the input we are attempting to predict. The most common result among the k samples will then be output. 
 
+In KNN algorithm for regression, the user wishes to output a numerical value, such as rent prices or cryptocurrency price predictions. The KNN algorithm would combine the values associated with the k nearest examples from the one on which we wish to make a prediction into a single value by taking an average or median to be a result.
 
-## Exercise 4
+When using a large data set, the prediction stage might be slow. It also requires high memory because we need to store all of the training data. Given that, it can also be computationally expensive. 
+
+## References
+1. https://www.mygreatlearning.com/blog/knn-algorithm-introduction/
+2. https://stackoverflow.com/questions/64990030/difference-between-classification-and-regression-in-k-nearest-neighbor
+3. https://cs231n.github.io/classification/
+
+# Exercise 4
 Suppose we have a data set with five predictors, $X1$= GPA, $X2$= extracurricular activities (EA), $X3$= Gender (1 for Female and 0 for Male), $X4$= Interaction between GPA and EA, and $X5$= Interaction between GPA and Gender. The response is starting salary after graduation (in thousands of dollars). Suppose we use least squares to fit the model, and get $\beta_0$ = 50, $\beta_1$ = 20, $\beta_2$ = 0.07, $\beta_3$ = 35, $\beta_4$ = 0.01, $\beta_5$ = −10.
 
 The regression equation should be:
@@ -106,7 +120,7 @@ little evidence of an interaction effect. Justify your answer.
 
 - This is **false**. A small value of coefficient does not imply that the interaction term has a minor influence. The statistical significance of the coefficient can be determined by looking at the p-value in the coefficient table.
 
-## Exercise 5
+# Exercise 5
 This question should be answered using the `biomass` data set.
 ```{r}
 library(tidyverse)
@@ -126,10 +140,6 @@ linear_reg() %>%
 lm_spec %>%
   fit(HHV ~ carbon + hydrogen + oxygen, data = biomass) -> lm_fit
 
-lm_fit %>%
-  pluck("fit") %>%
-  summary()
-
 # Another way to see the summary table
 # tidy(lm_fit)
 
@@ -137,7 +147,13 @@ lm_fit %>%
 predict(lm_fit, new_data = biomass) 
 ```
 
-b. Provide an interpretation of each coefficient in the model. Be careful, note the values `Cruise` is able to take.
+b. Provide an interpretation of each coefficient in the model. 
+
+- The p-value of intercept is 0.0952, meaning that we fail to reject the null.
+- The p-value of $b_1$ is less than 2e-16, meaning that the `carbon` has an impact on `HHV` when holding `hydrogen` and `oxygen` constant.
+- The p-value of $b_2$ is 0.0000986, meaning that the `hydrogen` has an impact on `HHV` when holding `carbon` and `oxygen` constant.
+- The p-value of $b_3$ is 0.9638, which means the result is the same as the $b_0$. That is, we have no evidence to reject the null hypothesis. So we can conclude the `oxygen` has no impact on `HHV` when holding `carbon` and `hydrogen` constant.
+- $b_0$ is 1.0456860, $b_1$ is 0.3478508, $b_2$ is 0.2430900, and $b_3$ is -0.0003767.
 ```{r}
 lm_fit %>%
   pluck("fit") %>%
