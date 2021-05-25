@@ -2,12 +2,14 @@
 title: "Labs 01 - Week1 Monday"
 author: "Yunting Chiu"
 date: "`r Sys.Date()`"
-output: 
-  pdf_document: 
+output:
+  html_document: 
+    theme: cerulean
+  pdf_document:
     highlight: zenburn
-urlcolor: "blue"
+urlcolor: blue
 ---
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -111,14 +113,14 @@ penguins %>%
   rename(count = n)
 ```
 Visualize the distribution of `body_mass_g` with ggplot
-```{r}
+```{r, warning=FALSE}
 penguins %>%
   ggplot(aes(body_mass_g)) +
-  geom_histogram() +
+  geom_histogram(bins = 30) +
   theme_bw()
 ```
 Look at the correlation between `body_mass_g` and some of the other variables
-```{r}
+```{r, warning=FALSE}
 ggplot(penguins, aes(body_mass_g, flipper_length_mm)) +
   geom_point() +
   ggtitle("body_mass_g vs flipper_length_mm")
