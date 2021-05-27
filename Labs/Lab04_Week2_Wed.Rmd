@@ -5,6 +5,7 @@ date: "`r Sys.Date()`"
 output:
   html_document: 
     theme: cerulean
+    highlight: zenburn
 ---
 
 ```{r setup, include=FALSE, warning=FALSE}
@@ -51,11 +52,13 @@ Fit the LDA model
 lda_fit <- fit(lda_spec, churn_formula, data = mlc_training)
 lda_fit
 ```
-The summary shows that our prior probabilities of customer churn are 0.14 Yes and 0.86 No. 
+The summary shows that our training prior probabilities of customer churn are 0.14 says **Yes** and 0.86 says **No**. The group means indicate the mean of each variable in each group. Plus, the coefficients of linear discriminants shows the linear combination of predictor variables that are used to form the LDA decision rule. For instance, `LD1 = 0.02711856*number_vmail_messages + 1.00746332*total_intl_minutes + 0.08589699*total_intl_calls - 4.07968773*total_intl_charge - 0.69807223*number_customer_service_calls`. Because there are only two response classes in this model, there will be only one set of coefficients (LD1).
 
 b. Inspect the model with `summary()` and `tidy()`. How good are the variables we have chosen?
+
+We can be using `summary(lda_fit$fit$means)` to see each mean of predictors, the outcome looks not bad.
 ```{r}
-summary(lda_fit$fit)
+summary(lda_fit$fit$means)
 ```
 `tidy()` can not works
 ```{r, error=TRUE}
@@ -64,7 +67,7 @@ tidy(lda_fit)
 
 c. Predict values for the testing data set.
 
-see the probability of answering **Yes** or **No**. We only show the first six rows to ensure that the output is clear, but you can manually remove `head()` to see the all results. All datasets will be still using `head()` in order to compress the outputs.
+See the probability of answering **Yes** or **No**. We only show the first six rows to ensure that the output is clear, but you can manually remove `head()` to see the all results. All datasets will be still using `head()` in order to compress the outputs.
 ```{r}
 predict(lda_fit, new_data = mlc_testing, type = "prob") %>%
   head()
@@ -100,6 +103,8 @@ Fit the QDA model
 qda_fit <- fit(qda_spec, formula = churn_formula, data = mlc_training)
 qda_fit
 ```
+The fitting time 159ms. We can find the prior probabilities and group means in this table. 
+
 
 b. Inspect the model with `summary()` and `tidy()`. How good are the variables we have chosen?
 ```{r}
@@ -109,7 +114,7 @@ summary(qda_fit$fit)
 ```{r, error=TRUE}
 tidy(qda_fit)
 ```
-we can also see the "Yes" covariances divided by "No" covariances by using the programming skill.
+To see more relationship between these predictors. We can also see the "Yes" covariances divided by "No" covariances by using the programming skill.
 ```{r}
 qda_fit$fit$covariances[,, "yes"] / qda_fit$fit$covariances[,, "no"]
 ```
@@ -147,6 +152,8 @@ knn_fit
 ```
 
 b. Inspect the model with `summary()` and `tidy()`. How good are the variables we have chosen?
+
+The misclassification is the percentage of classifications that are incorrect. The minimal misclassification is 0.15, meaning that the predictor variables are not bad.
 ```{r}
 summary(knn_fit$fit)
 ```
@@ -175,3 +182,8 @@ The KNN model with 5 neighbors has 83 % accuracy for predicting the customer chu
 knnPredDF %>%
 accuracy(truth = churn, estimate = .pred_class)
 ```
+
+# References
+- http://www.sthda.com/english/articles/36-classification-methods-essentials/146-discriminant-analysis-essentials-in-r/
+- http://uc-r.github.io/discriminant_analysis
+- https://datascienceplus.com/how-to-perform-logistic-regression-lda-qda-in-r/
