@@ -13,65 +13,165 @@ knitr::opts_chunk$set(echo = TRUE)
 
 We will be using the add-on package [discrim](https://discrim.tidymodels.org/) to access functions to perform discriminant analysis models with `parsnip` and the `klaR` package to perform the QDA calculations. if you haven't already got it installed run
 
-# Setup
-```{r, eval=FALSE, include=TRUE}
-# install.packages(c("discrim", "klaR"))
-library(tidymodels)
-library(discrim)
-data("mlc_churn")
-mlc_churn
-```
-
 Create a test-train `rsplit` object of `mlc_churn` using `initial_split()`. Use the arguments to set the proportions of the training data to be 80%. Stratify the sampling according to the `churn` variable.
 
 Do the following tasks for LDA, QDA and KNN model.
+
+# Setup
+```{r}
+# install.packages(c("discrim", "klaR"))
+library(tidyverse)
+library(tidymodels)
+library(discrim)
+data("mlc_churn")
+head(mlc_churn)
+```
+Splitting the data to training and testing sets.
 ```{r}
 set.seed(1234)
-mlc_split <- initial_split(mlc_churn, prop = .8, strata = churn)
+mlc_split <- initial_split(mlc_churn, prop = 0.8, strata = churn)
 mlc_split
 
 mlc_training <- training(mlc_split)
 mlc_testing <- testing(mlc_split)
+
+# model formula
+churn_formula <- churn ~ number_vmail_messages + total_intl_minutes + total_intl_calls + total_intl_charge + number_customer_service_calls
 ```
 
+# LDA (Linear Discriminant Analysis)
+a. Fit a classification model. Use `number_vmail_messages`, `total_intl_minutes`, `total_intl_calls`, `total_intl_charge`, `number_customer_service_calls` as predictors. Remember to fit the model only using the training data set.
 ```{r}
 lda_spec <- discrim_linear() %>%
   set_mode("classification") %>%
   set_engine("MASS") # the default is "MASS", otherwise is "mda"
 ```
-
-a. Fit a classification model. Use `number_vmail_messages`, `total_intl_minutes`, `total_intl_calls`, `total_intl_charge`, `number_customer_service_calls` as predictors. Remember to fit the model only using the training data set.
+Fit the LDA model
 ```{r}
-churn_formula <- churn ~ number_vmail_messages + total_intl_minutes + total_intl_calls + total_intl_charge + number_customer_service_calls
-
 lda_fit <- fit(lda_spec, churn_formula, data = mlc_training)
 lda_fit
+```
+The summary shows that our prior probabilities of customer churn are 0.14 Yes and 0.86 No. 
+
+b. Inspect the model with `summary()` and `tidy()`. How good are the variables we have chosen?
+```{r}
+summary(lda_fit$fit)
+```
+`tidy()` can not works
+```{r, error=TRUE}
+tidy(lda_fit)
+```
+
+c. Predict values for the testing data set.
+
+see the probability of answering **Yes** or **No**. We only show the first six rows to ensure that the output is clear, but you can manually remove `head()` to see the all results. All datasets will be still using `head()` in order to compress the outputs.
+```{r}
+predict(lda_fit, new_data = mlc_testing, type = "prob") %>%
+  head()
+```
+Using `augment()` is the simplest way to incorporate the prediction into an existing data frame.
+```{r}
+augment(lda_fit, new_data = mlc_testing) -> ldaPredDF
+head(ldaPredDF)
+```
+
+d. Use `conf_mat()` to construct a confusion matrix. Does the confusion matrix look good?
+
+The up-left area represents true negative, and the down-right area represents true positive; these two values are a leading indicator for determining whether the model is good or not. The true negative is 12, which greater then the false positive 5, and the true positive is 853, which is greater than false negative 129. Thus, the confusion matrix shows the model has a good prediction.
+```{r}
+ldaPredDF %>%
+  conf_mat(estimate = .pred_class, truth = churn)
+```
+The linear discriminant analysis model has 87 % accuracy for predicting the customer churn.
+```{r}
+ldaPredDF %>%
+accuracy(truth = churn, estimate = .pred_class)
+```
+
+# QDA (Quadratic Discriminant Analysis)
+a. Fit a classification model. Use `number_vmail_messages`, `total_intl_minutes`, `total_intl_calls`, `total_intl_charge`, `number_customer_service_calls` as predictors. Remember to fit the model only using the training data set.
+```{r}
+qda_spec <- discrim_regularized(frac_common_cov = 0, frac_identity = 0) %>%
+  set_mode("classification") %>%
+  set_engine("klaR")
+```
+Fit the QDA model
+```{r}
+qda_fit <- fit(qda_spec, formula = churn_formula, data = mlc_training)
+qda_fit
 ```
 
 b. Inspect the model with `summary()` and `tidy()`. How good are the variables we have chosen?
 ```{r}
+summary(qda_fit$fit)
+```
+`tidy()` can not works
+```{r, error=TRUE}
+tidy(qda_fit)
+```
+we can also see the "Yes" covariances divided by "No" covariances by using the programming skill.
+```{r}
+qda_fit$fit$covariances[,, "yes"] / qda_fit$fit$covariances[,, "no"]
+```
+c. Predict values for the testing data set.
+```{r}
+predict(qda_fit, new_data = mlc_testing, type = "prob") %>%
+  head()
 
+augment(qda_fit, new_data = mlc_testing) -> qdaPredDF
+qdaPredDF %>%
+  head()
+```
+
+d. Use `conf_mat()` to construct a confusion matrix. Does the confusion matrix look good?
+The up-left area represents true negative, and the down-right area represents true positive; these two values are a leading indicator for determining whether the model is good or not. The true negative is 27, which greater then the false positive 17, and the true positive is 841, which is greater than false negative 114. Thus, the confusion matrix shows the model has a good prediction.
+```{r}
+qdaPredDF %>%
+  conf_mat(estimate = .pred_class, truth = churn)
+```
+The quadratic discriminant analysis model has 87 % accuracy for predicting the customer churn.
+```{r}
+qdaPredDF %>%
+accuracy(truth = churn, estimate = .pred_class)
+```
+
+# KNN (k-Nearest Neighbors Algorithm)
+a. Fit a classification model. Use `number_vmail_messages`, `total_intl_minutes`, `total_intl_calls`, `total_intl_charge`, `number_customer_service_calls` as predictors. Remember to fit the model only using the training data set.
+```{r}
+knn_spec <- nearest_neighbor(neighbors = 5) %>% # default k is 5
+  set_mode("classification") %>%
+  set_engine("kknn")
+
+knn_fit <- fit(knn_spec, data = mlc_training, formula = churn_formula)
+knn_fit
+```
+
+b. Inspect the model with `summary()` and `tidy()`. How good are the variables we have chosen?
+```{r}
+summary(knn_fit$fit)
+```
+`tidy()` can not works
+```{r, error=TRUE}
+tidy(knn_fit)
 ```
 
 c. Predict values for the testing data set.
+```{r}
+augment(knn_fit, new_data = mlc_testing) -> knnPredDF
+knnPredDF %>%
+  head()
+```
+
 d. Use `conf_mat()` to construct a confusion matrix. Does the confusion matrix look good?
 
+The up-left area represents true negative, and the down-right area represents true positive; these two values are a leading indicator for determining whether the model is good or not. The true negative is 23, which less then the false positive 49, and the true positive is 809, which is greater than false negative 118. Thus, the confusion matrix shows the model has a good prediction, maybe.
 ```{r}
-formula_spec <- churn ~ number_vmail_messages + total_intl_minutes + 
-        total_intl_calls + total_intl_charge + number_customer_service_calls
+knnPredDF %>%
+  conf_mat(estimate = .pred_class, truth = churn)
+```
 
-library(discrim)
-lda_spec <- discrim_linear() %>%
-  set_engine("MASS") %>%
-  set_mode("classification") %>%
-  fit(formula_spec, data = mlc_churn)
-
-qda_spec <- discrim_regularized(frac_common_cov = 0, frac_identity = 0) %>% 
-  set_engine("klaR") %>%
-  set_mode("classification") %>%
-  fit(formula_spec, data = mlc_churn)
-
-knn_spec <- nearest_neighbor(neighbors = 1) %>%
-  set_engine("kknn") %>%
-  set_mode("classification")
+The KNN model with 5 neighbors has 83 % accuracy for predicting the customer churn.
+```{r}
+knnPredDF %>%
+accuracy(truth = churn, estimate = .pred_class)
 ```

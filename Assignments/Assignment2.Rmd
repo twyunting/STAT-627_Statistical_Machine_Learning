@@ -13,3 +13,53 @@ urlcolor: blue
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+# Exercise 1 (10 points)
+
+Suppose we collect data for a group of students in a statistics class with variables $X_1$ = hours studied, $X_2$ = undergrad GPA, and $Y$ = receive an A. We fit a logistic regression and produce estimated coefficient, $\hat{\beta}_0=-6$, $\hat{\beta}_1=0.05$, $\hat{\beta}_2=1$.
+
+The equation of logistic regression is:
+$$
+p(X) = \frac{e^{\beta_0 + \beta_1X_1 + … + \beta_pX_p}}{1 + e^{\beta_0 + \beta_1X_1 + … + \beta_pX_p}}
+$$
+a) Estimate the probability that a student who studies for 40 hours and has an undergrad GPA of $3.5$ gets an A in the class.
+ 
+According to the question, $X_1$ is 40 hours and $X_2$ is $3.5$ so the probability will be:
+$$
+\hat{p}(X) = \frac{e^{-6 + 0.05X_1 + 1X_2}}{(1 + e^{-6 + 0.05X_1 + 1X_2})} = 0.3775.
+$$
+
+`e` is an Euler's number, which is close to 2.7182818284590452353602874713527.... Using `exp()` in the console, the probability of getting an A will be 0.3775
+$$
+\hat{p}(X) = \frac{e^{-6 + 0.05*40 + 1*3.5}}{(1 + e^{-6 + 0.05*40 + 1*3.5})} = 0.3775406
+$$
+
+b) How many hours would that student in part (a) need to study to have a 50% chance of getting an A in the class?
+
+Now, we don't know how many studying hour is, we need to find out $X_1$. 
+$$
+\frac{e^{-6 + 0.05X_1 + 1*3.5}}{(1 + e^{-6 + 0.05X_1 + 1*3.5})} = 0.5
+$$
+```{r}
+
+```
+
+# Exercise 2 (10 points)
+
+Suppose that we take a data set, divide it into equally-sized training and test sets, and then try out two different classification procedures. First, we use logistic regression and get an error rate of 20% on the training data and 30% on the test data. Next, we use 1-nearest neighbors (i.e. $K = 1$) and get an average error rate (averaged over both test and training data sets) of 18%. Based on these results, which method should we prefer to use for classification of new observations? Why?
+
+# Exercise 3 (15 points)
+You will in this exercise examine the differences between LDA and QDA.
+
+a) If the Bayes decision boundary is linear, do we expect LDA or QDA to perform better on the training set? On the test set?
+
+b) If the Bayes decision boundary is non-linear, do we expect LDA or QDA to perform better on the training set? On the test set?
+
+c) In general, as the sample size n increases, do we expect the test prediction accuracy or QDA relative to LDA to improve, decline, or be unchanged? Why?
+
+d) True or False: Even if the Bayes decision boundary for a given problem is linear, we will probably achieve a superior test error rate using QDA rather than LDA because QDA is flexible enough to model a linear decision boundary. Justify your answer.
+
+Ans: False. 
+
+## References
+- http://uc-r.github.io/discriminant_analysis
