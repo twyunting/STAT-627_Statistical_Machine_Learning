@@ -11,25 +11,50 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
-library(tidymodels)
-data("mlc_churn")
-```
+We will be using the add-on package [discrim](https://discrim.tidymodels.org/) to access functions to perform discriminant analysis models with `parsnip` and the `klaR` package to perform the QDA calculations. if you haven't already got it installed run
 
-We will be using the add-on package [discrim](https://discrim.tidymodels.org/) to access functions to perform discriminant analysis models with parsnip and the `klaR` package to perform the QDA calculations. if you haven't already got it installed run
-
+# Setup
 ```{r, eval=FALSE, include=TRUE}
-install.packages(c("discrim", "klaR"))
+# install.packages(c("discrim", "klaR"))
+library(tidymodels)
+library(discrim)
+data("mlc_churn")
+mlc_churn
 ```
 
 Create a test-train `rsplit` object of `mlc_churn` using `initial_split()`. Use the arguments to set the proportions of the training data to be 80%. Stratify the sampling according to the `churn` variable.
 
 Do the following tasks for LDA, QDA and KNN model.
+```{r}
+set.seed(1234)
+mlc_split <- initial_split(mlc_churn, prop = .8, strata = churn)
+mlc_split
+
+mlc_training <- training(mlc_split)
+mlc_testing <- testing(mlc_split)
+```
+
+```{r}
+lda_spec <- discrim_linear() %>%
+  set_mode("classification") %>%
+  set_engine("MASS") # the default is "MASS", otherwise is "mda"
+```
 
 a. Fit a classification model. Use `number_vmail_messages`, `total_intl_minutes`, `total_intl_calls`, `total_intl_charge`, `number_customer_service_calls` as predictors. Remember to fit the model only using the training data set.
-a. Inspect the model with `summary()` and `tidy()`. How good are the variables we have chosen?
-a. Predict values for the testing data set.
-a. Use `conf_mat()` to construct a confusion matrix. Does the confusion matrix look good?
+```{r}
+churn_formula <- churn ~ number_vmail_messages + total_intl_minutes + total_intl_calls + total_intl_charge + number_customer_service_calls
+
+lda_fit <- fit(lda_spec, churn_formula, data = mlc_training)
+lda_fit
+```
+
+b. Inspect the model with `summary()` and `tidy()`. How good are the variables we have chosen?
+```{r}
+
+```
+
+c. Predict values for the testing data set.
+d. Use `conf_mat()` to construct a confusion matrix. Does the confusion matrix look good?
 
 ```{r}
 formula_spec <- churn ~ number_vmail_messages + total_intl_minutes + 
