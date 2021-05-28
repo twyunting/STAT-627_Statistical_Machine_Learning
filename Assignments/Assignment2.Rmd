@@ -12,6 +12,9 @@ urlcolor: blue
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidymodels)
+library(corrplot)
 ```
 
 # Exercise 1 (10 points)
@@ -53,6 +56,7 @@ You will in this exercise examine the differences between LDA and QDA.
 
 a) If the Bayes decision boundary is linear, do we expect LDA or QDA to perform better on the training set? On the test set?
 
+
 b) If the Bayes decision boundary is non-linear, do we expect LDA or QDA to perform better on the training set? On the test set?
 
 c) In general, as the sample size n increases, do we expect the test prediction accuracy or QDA relative to LDA to improve, decline, or be unchanged? Why?
@@ -60,6 +64,210 @@ c) In general, as the sample size n increases, do we expect the test prediction 
 d) True or False: Even if the Bayes decision boundary for a given problem is linear, we will probably achieve a superior test error rate using QDA rather than LDA because QDA is flexible enough to model a linear decision boundary. Justify your answer.
 
 Ans: False. 
+
+# Exercise 4 (20 points)
+
+In this exercise, we will explore a data set about cars called `auto` which you can find [here](data/auto.csv).
+
+The data set contains 1 factor variable and 6 numeric variables. The factor variable `mpg` has two levels `high` and `low` indicating **whether the car has a high or low miles per gallon**. We will in this exercise investigate if we are able to use a logistic regression classifier to predict if a car has high or low mpg from the other variables.
+
+a) Read in the data and create a test-train `rsplit` object of `auto` using `initial_split()`. Use default arguments for `initial_split()`.
+```{r}
+# read the data
+autoDF <- read_csv("data/auto.csv")
+# see each variable's type
+str(autoDF)
+# mutate the response variable to be a factor type
+autoDF %>%
+  mutate(mpg = as.factor(mpg)) -> autoDF
+# set a seed
+set.seed(1)
+# splitting to train and test sets
+auto_split <- initial_split(autoDF, strata = mpg)
+auto_split
+```
+
+b) Create the training and testing data set with `training()` and `testing()` respectively.
+```{r}
+auto_train <- training(auto_split)
+auto_train %>%
+  nrow()
+auto_test <- testing(auto_split)
+auto_test %>%
+  nrow()
+```
+
+c) Fit a logistic regression model using `logistic_reg()`. Use all the 6 numeric variables as predictors (a formula shorthand is to write `mpg ~ .` where `.` means everything. Remember to fit the model only using the training data set.
+```{r}
+# create a model formula
+auto_formula <- mpg ~ .
+
+# set the logistic regression engine
+lr_spec <- logistic_reg() %>%
+  set_engine("glm") %>%
+  set_mode("classification")
+
+# fit the model
+lr_spec %>%
+  fit(auto_formula, data = auto_train) -> lr_fit
+lr_fit
+```
+d) Inspect the model with `summary()` and `tidy()`. Which of the variables are significant?
+
+According to the outcomes of two tables below, we find `intercept`, `weight` and `year` predictors are significant. That is, $b_0$, $b_4$, and $b_6$.
+```{r}
+# using summary()
+lr_fit %>%
+  pluck("fit") %>% # unest the list
+  summary()
+
+# using tidy()
+tidy(lr_fit) %>%
+  mutate(signPredictor = ifelse(p.value < 0.05, "Yes", "No")) %>%
+  filter(signPredictor == "Yes")
+```
+
+e) Predict values for the training data set and save them as `training_pred`.
+```{r}
+augment(lr_fit, new_data = auto_test) -> training_pred
+training_pred %>%
+  head()
+# predict(lr_fit, new_data = auto_test) -> tmp
+```
+
+f) Use the following code to calculate the training accuracy (`auto_training` should be renamed to match your training data set if needed).
+```{r}
+bind_cols(training_pred, auto_train) %>%
+accuracy(truth = mpg, estimate = .pred_class)
+```
+g) Predict values for the testing data set and use the above code to calculate the testing accuracy. Compare.
+```{r}
+
+```
+
+# Execise 5 (20 points)
+
+This exercise should be answered using the `Weekly` data set, which is part of the `LSLR` package. If you don't have it installed already you can install it with
+
+```{r}
+# if necessary please run the below line
+# install.packages("ISLR")
+```
+
+To load the data set run the following code
+
+```{r}
+library(ISLR)
+data("Weekly")
+```
+
+This data is similar in nature to the `Smarket` data from chapter 4's lab, it contains 1089 weekly returns for 21 years, from the beginning of 1990 to the end of 2010.
+```{r}
+Weekly %>%
+  head()
+```
+a. Produce some numerical and graphical summaries of the data. Does there appear to be any patterns?
+
+Although we can see the approximate range value for each variable, the summary table does not reveal any significant relationship between these variables.
+```{r}
+# numerical summary
+summary(Weekly)
+```
+
+The table of correlations is shown below. Suggest that we plot this table so that it is clear to the reader.
+```{r}
+cor(Weekly[-9]) %>%
+  as_tibble()
+```
+
+Removing `Direction` variable as it is a qualitative variable. We can see the correlation between these eight variables. The plot shows `Year` and `Volume` has a strong linear relationship.
+```{r}
+# graphical summary
+corrplot(cor(Weekly[1:8]), method="square")
+```
+
+This plot depicts an increasing volume of stock trading over time; the volume continues to rise as time passes. Is everyone now wealthy?
+```{r}
+Weekly %>%
+  ggplot(aes(as.factor(Year), Volume)) +
+  geom_boxplot() +
+  theme_bw()
+```
+
+b. Use the whole data set to perform a logistic regression (with `logistic_reg()`) with `Direction` as the response and the five lag variables plus `Volume` as predictors. Use the `summary()` (remember to do `summary(model_fit$fit)`) function to print the results. Do any of the predictors appear to be statistically significant? if so, which ones?
+
+The p-value of intercept and $b_2$ are statistically significant at the level of significance $\alpha =0.05$. That is, the predictor `Lag2` can be rejected the null hypothesis, meaning that there is evidence to say `Lag2` has an impact on `Direction` while the other predictors hold constant.
+```{r}
+lr_spec %>%
+  fit(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, data = Weekly) -> lr_Weekly_fit
+
+lr_Weekly_fit$fit %>%
+  summary()
+```
+
+c. Use `conf_int()` and `accuracy()` from `yardstick` package to calculate the confusion matrix and the accuracy (overall fraction of correct predictions). Explain what the confusion matrix is telling you about the types of mistakes made by logistic regression.
+
+As shown in the confusion matrix, the logistic regression model operate the five `Lag` variables and `Volume` as predictors. The predictions are represented by the rows of the confusion matrix, while the ground truth is represented by the columns. The up-left area represents true **Down**, and the down-right area represents true **Up**; these two values are a leading indicator for determining whether the model is right or wrong. The true Down is 54, which greater then the false Down 48, and the true UP is 557, which is greater than false negative 430. Compared to the ground truth, the predictions don't work well. The model just splitting approximately 50 % to the down and 50 % to the up direction.
+```{r}
+preds_Weekly <- augment(lr_Weekly_fit, new_data = Weekly)
+preds_Weekly %>%
+  conf_mat(truth = Direction, estimate = .pred_class) -> confusionMatrixWeekly
+confusionMatrixWeekly
+
+# we can also plot the confusion matrix
+confusionMatrixWeekly %>%
+  autoplot(type = "heatmap") +
+  theme_minimal()
+
+```
+Look at the table below, which indicates the accuracy of the data that are predicted correctly. The model only predict the direction correctly 611 (54+557) weeks out of 1089 weeks, for an accuracy of 0.56.
+```{r}
+# accuracy
+preds_Weekly %>%
+accuracy(truth = Direction, estimate = .pred_class)
+```
+
+d. Split the data into a training and testing data set using the following code
+```{r}
+weekly_training <- Weekly %>% filter(Year <= 2008)
+weekly_testing <- Weekly %>% filter(Year > 2008)
+```
+
+e. Now fit the **logistic regression model** using the training data, with `Lag2` as the only predictor. Compute the confusion matrix and accuracy metric using the testing data set.
+
+The intercept and `Lag2` are in the significant level.
+```{r}
+lr_spec %>%
+  fit(Direction ~ Lag2, data = weekly_training) -> lr_Lag2_fit
+
+lr_Lag2_fit$fit %>%
+  tidy() %>%
+  mutate(hypo = ifelse(p.value < 0.05, "H1", "H0"))
+```
+
+Only Keeping `Lag2` as predictor, the predicted accuracy of the logistic regression model augments to 0.625. 
+```{r}
+preds_lr_Lag2_fit <- augment(lr_Lag2_fit, new_data = weekly_testing)
+
+# confusion matrix table
+preds_lr_Lag2_fit %>%
+  conf_mat(truth = Direction, estimate = .pred_class) -> lrMatrix
+lrMatrix
+
+# plot the confusion matrix
+lrMatrix %>%
+  autoplot(type = "heatmap")
+
+# accuracy
+preds_lr_Lag2_fit %>%
+accuracy(truth = Direction, estimate = .pred_class)
+```
+
+f. Repeat (e) using LDA.
+g. Repeat (e) using QDA.
+h. Repeat (e) using KNN with `K = 1`.
+i. Which of these methods appear to provide the best results on the data?
+j. (Optional) Experiment with different combinations of predictors for each of the methods. Report the variables, methods, and associated confusion matrix that appears to provide the best results on the held-out data. Note that you can also experiment with different values of K in KNN. (This kind of running many many models and testing on the testing data set many times is not good practice. We will look at ways in later weeks on how we can properly explore multiple models.)
 
 ## References
 - http://uc-r.github.io/discriminant_analysis

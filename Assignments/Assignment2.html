@@ -11,7 +11,7 @@
 
 <meta name="author" content="Yunting Chiu" />
 
-<meta name="date" content="2021-05-26" />
+<meta name="date" content="2021-05-28" />
 
 <title>STAT-627 Assignment 2</title>
 
@@ -226,6 +226,101 @@ document.addEventListener('DOMContentLoaded', function() {
     </style>
 
 
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
+<style type="text/css" data-origin="pandoc">
+code.sourceCode > span { display: inline-block; line-height: 1.25; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
 
 
 
@@ -338,7 +433,7 @@ pre code {
 
 <h1 class="title toc-ignore">STAT-627 Assignment 2</h1>
 <h4 class="author">Yunting Chiu</h4>
-<h4 class="date">2021-05-26</h4>
+<h4 class="date">2021-05-28</h4>
 
 </div>
 
@@ -347,10 +442,10 @@ pre code {
 <h1><span class="header-section-number">1</span> Exercise 1 (10 points)</h1>
 <p>Suppose we collect data for a group of students in a statistics class with variables <span class="math inline">\(X_1\)</span> = hours studied, <span class="math inline">\(X_2\)</span> = undergrad GPA, and <span class="math inline">\(Y\)</span> = receive an A. We fit a logistic regression and produce estimated coefficient, <span class="math inline">\(\hat{\beta}_0=-6\)</span>, <span class="math inline">\(\hat{\beta}_1=0.05\)</span>, <span class="math inline">\(\hat{\beta}_2=1\)</span>.</p>
 <p>The equation of logistic regression is: <span class="math display">\[
-p(X) = \frac{exp^{\beta_0 + \beta_1X_1 + … + \beta_pX_p}}{1 + exp^{\beta_0 + \beta_1X_1 + … + \beta_pX_p}}
+p(X) = \frac{e^{\beta_0 + \beta_1X_1 + … + \beta_pX_p}}{1 + e^{\beta_0 + \beta_1X_1 + … + \beta_pX_p}}
 \]</span> a) Estimate the probability that a student who studies for 40 hours and has an undergrad GPA of <span class="math inline">\(3.5\)</span> gets an A in the class.</p>
 <p>According to the question, <span class="math inline">\(X_1\)</span> is 40 hours and <span class="math inline">\(X_2\)</span> is <span class="math inline">\(3.5\)</span> so the probability will be: <span class="math display">\[
-\hat{p}(X) = \frac{exp^{-6 + 0.05X_1 + 1X_2}}{(1 + exp^{-6 + 0.05X_1 + 1X_2})} = 0.3775.
+\hat{p}(X) = \frac{e^{-6 + 0.05X_1 + 1X_2}}{(1 + e^{-6 + 0.05X_1 + 1X_2})} = 0.3775.
 \]</span></p>
 <p><code>e</code> is an Euler’s number, which is close to 2.7182818284590452353602874713527…. Using <code>exp()</code> in the console, the probability of getting an A will be 0.3775 <span class="math display">\[
 \hat{p}(X) = \frac{e^{-6 + 0.05*40 + 1*3.5}}{(1 + e^{-6 + 0.05*40 + 1*3.5})} = 0.3775406
@@ -370,11 +465,64 @@ p(X) = \frac{exp^{\beta_0 + \beta_1X_1 + … + \beta_pX_p}}{1 + exp^{\beta_0 + \
 <h1><span class="header-section-number">3</span> Exercise 3 (15 points)</h1>
 <p>You will in this exercise examine the differences between LDA and QDA.</p>
 <ol style="list-style-type: lower-alpha">
-<li>If the Bayes decision boundary is linear, do we expect LDA or QDA to perform better on the training set? On the test set?</li>
-<li>If the Bayes decision boundary is non-linear, do we expect LDA or QDA to perform better on the training set? On the test set?</li>
-<li>In general, as the sample size n increases, do we expect the test prediction accuracy or QDA relative to LDA to improve, decline, or be unchanged? Why?</li>
-<li>True or False: Even if the Bayes decision boundary for a given problem is linear, we will probably achieve a superior test error rate using QDA rather than LDA because QDA is flexible enough to model a linear decision boundary. Justify your answer.</li>
+<li><p>If the Bayes decision boundary is linear, do we expect LDA or QDA to perform better on the training set? On the test set?</p></li>
+<li><p>If the Bayes decision boundary is non-linear, do we expect LDA or QDA to perform better on the training set? On the test set?</p></li>
+<li><p>In general, as the sample size n increases, do we expect the test prediction accuracy or QDA relative to LDA to improve, decline, or be unchanged? Why?</p></li>
+<li><p>True or False: Even if the Bayes decision boundary for a given problem is linear, we will probably achieve a superior test error rate using QDA rather than LDA because QDA is flexible enough to model a linear decision boundary. Justify your answer.</p></li>
 </ol>
+<p>Ans: False.</p>
+</div>
+<div id="exercise-4-20-points" class="section level1">
+<h1><span class="header-section-number">4</span> Exercise 4 (20 points)</h1>
+<p>In this exercise, we will explore a data set about cars called <code>auto</code> which you can find <a href="data/auto.csv">here</a>.</p>
+<p>The data set contains 1 factor variable and 6 numeric variables. The factor variable <code>mpg</code> has two levels <code>high</code> and <code>low</code> indicating whether the car has a high or low miles per gallon. We will in this exercise investigate if we are able to use a logistic regression classifier to predict if a car has high or low mpg from the other variables.</p>
+<ol style="list-style-type: lower-alpha">
+<li><p>Read in the data and create a test-train <code>rsplit</code> object of <code>auto</code> using <code>initial_split()</code>. Use default arguments for <code>initial_split()</code>.</p></li>
+<li><p>Create the training and testing data set with <code>training()</code> and <code>testing()</code> respectively.</p></li>
+<li><p>Fit a logistic regression model using <code>logistic_reg()</code>. Use all the 6 numeric variables as predictors (a formula shorthand is to write <code>mpg ~ .</code> where <code>.</code> means everything. Remember to fit the model only using the training data set.</p></li>
+<li><p>Inspect the model with <code>summary()</code> and <code>tidy()</code>. Which of the variables are significant?</p></li>
+<li><p>Predict values for the training data set and save them as <code>training_pred</code>.</p></li>
+<li><p>Use the following code to calculate the training accuracy</p></li>
+</ol>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="co">#bind_cols(</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="co">#training_pred,</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>  <span class="co">#auto_training) %&gt;%</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="co">#accuracy(truth = mpg, estimate = .pred_class)</span></span></code></pre></div>
+<p>(<code>auto_training</code> should be renamed to match your training data set if needed.)</p>
+<ol start="7" style="list-style-type: lower-alpha">
+<li>Predict values for the testing data set and use the above code to calculate the testing accuracy. Compare.</li>
+</ol>
+</div>
+<div id="execise-5-20-points" class="section level1">
+<h1><span class="header-section-number">5</span> Execise 5 (20 points)</h1>
+<p>This exercise should be answered using the <code>Weekly</code> data set, which is part of the <code>LSLR</code> package. If you don’t have it installed already you can install it with</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="co"># install.packages(&quot;ISLR&quot;)</span></span></code></pre></div>
+<p>To load the data set run the following code</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">library</span>(ISLR)</span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">data</span>(<span class="st">&quot;Weekly&quot;</span>)</span></code></pre></div>
+<p>This data is similar in nature to the <code>Smarket</code> data from chapter 4’s lab, it contains 1089 weekly returns for 21 years, from the beginning of 1990 to the end of 2010.</p>
+<ol style="list-style-type: lower-alpha">
+<li>Produce some numerical and graphical summaries of the data. Does there appear to be any patterns?</li>
+<li>Use the whole data set to perform a logistic regression (with <code>logistic_reg()</code>) with <code>Direction</code> as the response and the five lag variables plus <code>Volume</code> as predictors. Use the <code>summary()</code> (remember to do <code>summary(model_fit$fit)</code>) function to print the results. Do any of the predictors appear to be statistically significant? if so, which ones?</li>
+<li>Use <code>conf_int()</code> and <code>accuracy()</code> from <code>yardstick</code> package to calculate the confusion matrix and the accuracy (overall fraction of correct predictions). Explain what the confusion matrix is telling you about the types of mistakes made by logistic regression.</li>
+<li>Split the data into a training and testing data set using the following code</li>
+</ol>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a><span class="co">#weekly_training &lt;- Weekly %&gt;% filter(Year &lt;= 2008)</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="co">#weekly_testing &lt;- Weekly %&gt;% filter(Year &gt; 2008)</span></span></code></pre></div>
+<ol style="list-style-type: lower-alpha">
+<li>Now fit the logistic regression model using the training data, with <code>Lag2</code> as the only predictor. Compute the confusion matrix and accuracy metric using the testing data set.</li>
+<li>Repeat (e) using LDA.</li>
+<li>Repeat (e) using QDA.</li>
+<li>Repeat (e) using KNN with <code>K = 1</code>.</li>
+<li>Which of these methods appear to provide the best results on the data?</li>
+<li>(Optional) Experiment with different combinations of predictors for each of the methods. Report the variables, methods, and associated confusion matrix that appears to provide the best results on the held-out data. Note that you can also experiment with different values of K in KNN. (This kind of running many many models and testing on the testing data set many times is not good practice. We will look at ways in later weeks on how we can properly explore multiple models.)</li>
+</ol>
+<div id="references" class="section level2">
+<h2><span class="header-section-number">5.1</span> References</h2>
+<ul>
+<li><a href="http://uc-r.github.io/discriminant_analysis" class="uri">http://uc-r.github.io/discriminant_analysis</a></li>
+</ul>
+</div>
 </div>
 
 

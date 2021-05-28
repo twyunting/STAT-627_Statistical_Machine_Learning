@@ -45,7 +45,7 @@ mlc_split
 
 b. Create the training and testing data set with `training()` and `testing()` respectively. Does the observation counts match what you found in the last question?
 
-- Using `nrow()`, we can exactly see the traning and testing sets have 4001 and 999, respectively.
+- Using `nrow()`, we can exactly see the training and testing sets have 4001 and 999, respectively.
 ```{r}
 mlc_training <- training(mlc_split)
 nrow(mlc_training)
