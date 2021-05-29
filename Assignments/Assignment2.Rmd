@@ -5,17 +5,21 @@ date: "`r Sys.Date()`"
 output:
   html_document: 
     number_sections: yes
-    highlight: pygments
     theme: cerulean
+    highlight: kate
 urlcolor: blue
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(tidymodels)
 library(corrplot)
+library(ggthemes)
+library(discrim)
+library(leaps)
 ```
+In this assignment, I will be using [Tidymodels](https://www.tidymodels.org/) instead of base R to do coding.
 
 # Exercise 1 (10 points)
 
@@ -29,13 +33,23 @@ a) Estimate the probability that a student who studies for 40 hours and has an u
  
 According to the question, $X_1$ is 40 hours and $X_2$ is $3.5$ so the probability will be:
 $$
-\hat{p}(X) = \frac{e^{-6 + 0.05X_1 + 1X_2}}{(1 + e^{-6 + 0.05X_1 + 1X_2})} = 0.3775.
+\hat{p}(X) = \frac{e^{-6 + 0.05X_1 + 1X_2}}{(1 + e^{-6 + 0.05X_1 + 1X_2})}
 $$
 
 `e` is an Euler's number, which is close to 2.7182818284590452353602874713527.... Using `exp()` in the console, the probability of getting an A will be 0.3775
 $$
-\hat{p}(X) = \frac{e^{-6 + 0.05*40 + 1*3.5}}{(1 + e^{-6 + 0.05*40 + 1*3.5})} = 0.3775406
+\hat{p}(X) = \frac{e^{-6 + 0.05*40 + 1*3.5}}{(1 + e^{-6 + 0.05*40 + 1*3.5})} = 0.3775407
 $$
+We can create a function to compute the probability, the answer is p = 37.8 %.
+```{r}
+prob <- function(x1,x2){
+  stopifnot(is.numeric(x1) & is.numeric(x2))
+  tmp <- exp(-6 + 0.05 * x1 + 1 * x2) 
+  return(tmp/(1 + tmp))
+}
+
+prob(40, 3.5)
+```
 
 b) How many hours would that student in part (a) need to study to have a 50% chance of getting an A in the class?
 
@@ -43,8 +57,15 @@ Now, we don't know how many studying hour is, we need to find out $X_1$.
 $$
 \frac{e^{-6 + 0.05X_1 + 1*3.5}}{(1 + e^{-6 + 0.05X_1 + 1*3.5})} = 0.5
 $$
-```{r}
+And we use 1- 100 to test which hour ($X_1$) is exactly matched to 50% chance of getting an A. The answer is 50 hours.
+```{r, warning=FALSE}
+hours <- seq(1 ,100 ,1)
+probs <- mapply(hours, 3.5, FUN = prob) #X1, X2, function
 
+names(probs) <- paste(hours,"Hours")
+probs %>% 
+  tidy() %>%
+  filter(x == 0.5)
 ```
 
 # Exercise 2 (10 points)
@@ -128,22 +149,27 @@ tidy(lr_fit) %>%
 ```
 
 e) Predict values for the training data set and save them as `training_pred`.
+
+In order to successfully combine two datasets without has conflicted columns in the following question, we will use `predict()` rather than `augment()`.
 ```{r}
-augment(lr_fit, new_data = auto_test) -> training_pred
-training_pred %>%
-  head()
-# predict(lr_fit, new_data = auto_test) -> tmp
+predict(lr_fit, new_data = auto_train) -> training_pred
 ```
 
 f) Use the following code to calculate the training accuracy (`auto_training` should be renamed to match your training data set if needed).
+
+The training accuracy in the training data is 90.3 %, which is excellent.
 ```{r}
 bind_cols(training_pred, auto_train) %>%
 accuracy(truth = mpg, estimate = .pred_class)
 ```
 g) Predict values for the testing data set and use the above code to calculate the testing accuracy. Compare.
-```{r}
 
+The training accuracy in the testing data is 89.9 %, which is outstanding.
+```{r}
+augment(lr_fit, new_data = auto_test) -> testing_pred 
+accuracy(testing_pred, truth = mpg, estimate = .pred_class)
 ```
+When compared to the training accuracy in both the training and testing datasets, the result is extremely close. Regardless, the high values of predicted accuracy have already indicated that the predictors are good in the `auto` data frame to predict whether the car has a high or low miles per gallon tendency (`mpg`). 
 
 # Execise 5 (20 points)
 
@@ -155,7 +181,6 @@ This exercise should be answered using the `Weekly` data set, which is part of t
 ```
 
 To load the data set run the following code
-
 ```{r}
 library(ISLR)
 data("Weekly")
@@ -245,7 +270,7 @@ lr_Lag2_fit$fit %>%
   mutate(hypo = ifelse(p.value < 0.05, "H1", "H0"))
 ```
 
-Only Keeping `Lag2` as predictor, the predicted accuracy of the logistic regression model augments to 0.625. 
+Only Keeping `Lag2` as predictor, the predicted accuracy of the logistic regression model augments to 0.625.
 ```{r}
 preds_lr_Lag2_fit <- augment(lr_Lag2_fit, new_data = weekly_testing)
 
@@ -256,18 +281,213 @@ lrMatrix
 
 # plot the confusion matrix
 lrMatrix %>%
-  autoplot(type = "heatmap")
+  autoplot(type = "heatmap") +
+  theme_tufte() +
+  ggtitle("Confusion Matrix")
 
 # accuracy
 preds_lr_Lag2_fit %>%
-accuracy(truth = Direction, estimate = .pred_class)
+accuracy(truth = Direction, estimate = .pred_class) %>%
+  mutate(model = "Logistic Regression") -> lr_acc
+lr_acc 
 ```
 
 f. Repeat (e) using LDA.
-g. Repeat (e) using QDA.
-h. Repeat (e) using KNN with `K = 1`.
-i. Which of these methods appear to provide the best results on the data?
-j. (Optional) Experiment with different combinations of predictors for each of the methods. Report the variables, methods, and associated confusion matrix that appears to provide the best results on the held-out data. Note that you can also experiment with different values of K in KNN. (This kind of running many many models and testing on the testing data set many times is not good practice. We will look at ways in later weeks on how we can properly explore multiple models.)
+```{r}
+# set LDA specification
+lda_spec <- discrim_linear() %>%
+  set_mode("classification") %>%
+  set_engine("MASS") # the default is "MASS", otherwise is "mda"
+```
 
-## References
+Fit the linear discriminant analysis model. 
+```{r}
+lda_Lag2_fit <- fit(lda_spec, Direction ~ Lag2, data = weekly_training)
+lda_Lag2_fit
+```
+The result is very similar to the logistic regression model we mentioned before. Using Linear Discriminant Analysis, the model predicts the `Direction` trend with 0.625 accuracy.
+```{r}
+preds_lda_Lag2_fit <- augment(lda_Lag2_fit , new_data = weekly_testing)
+
+# confusion matrix table
+preds_lda_Lag2_fit %>%
+  conf_mat(truth = Direction, estimate = .pred_class) -> ldaMatrix
+ldaMatrix
+
+# plot the confusion matrix
+ldaMatrix %>%
+  autoplot(type = "heatmap") +
+  theme_tufte() +
+  ggtitle("Confusion Matrix")
+
+# accuracy
+preds_lda_Lag2_fit %>%
+accuracy(truth = Direction, estimate = .pred_class) %>%
+  mutate(model = "Linear Discriminant Analysis") -> lda_acc
+lda_acc
+```
+
+g. Repeat (e) using QDA.
+```{r}
+# set QDA specification
+qda_spec <- discrim_regularized() %>%
+  set_mode("classification") %>%
+  set_args(frac_common_cov = 0, frac_identity = 0) %>%
+  set_engine("klaR")
+```
+
+Fit the Quadratic Discriminant Analysis model. 
+```{r}
+qda_Lag2_fit <- fit(qda_spec, Direction ~ Lag2, data = weekly_training)
+qda_Lag2_fit
+```
+
+The Quadratic Discriminant Analysis model has a lower accuracy of 0.585 than the LDA and logistic regression models. Look at the confusion matrix, the model cannot predict anything in downward weekly trends, causing a main weakness to decrease the predicted accuracy of the model.
+```{r}
+preds_qda_Lag2_fit <- augment(qda_Lag2_fit , new_data = weekly_testing)
+
+# confusion matrix table
+preds_qda_Lag2_fit %>%
+  conf_mat(truth = Direction, estimate = .pred_class) -> qdaMatrix
+qdaMatrix
+
+# plot the confusion matrix
+qdaMatrix %>%
+  autoplot(type = "heatmap") +
+  theme_tufte() +
+  ggtitle("Confusion Matrix")
+
+# accuracy
+preds_qda_Lag2_fit %>%
+accuracy(truth = Direction, estimate = .pred_class) %>%
+  mutate(model = "Quadratic Discriminant Analysis") -> qda_acc
+qda_acc
+```
+
+h. Repeat (e) using KNN with `K = 1`.
+```{r}
+# set a KNN specification
+knn_spec <- nearest_neighbor(neighbors = 1) %>%
+  set_mode("classification") %>%
+  set_engine("kknn")
+```
+
+Fit the K-Nearest Neighbors algorithm model. 
+```{r}
+knn_Lag2_fit <- fit(knn_spec, Direction ~ Lag2, data = weekly_training)
+knn_Lag2_fit
+```
+The K-Nearest Neighbors algorithm produced a classification model with a 50% accuracy rate, which is the same as random chance.
+```{r}
+preds_knn_Lag2_fit <- augment(knn_Lag2_fit , new_data = weekly_testing)
+
+# confusion matrix table
+preds_knn_Lag2_fit %>%
+  conf_mat(truth = Direction, estimate = .pred_class) -> knnMatrix
+knnMatrix
+
+# plot the confusion matrix
+knnMatrix %>%
+  autoplot(type = "heatmap") +
+  theme_tufte() +
+  ggtitle("Confusion Matrix")
+
+# accuracy
+preds_knn_Lag2_fit %>%
+accuracy(truth = Direction, estimate = .pred_class) %>%
+  mutate(model = "K-Nearest Neighbors") -> knn_acc
+knn_acc
+```
+ 
+i. Which of these methods appear to provide the best results on the data?
+
+Using `Lag2` as predictor only to predict upward and downward in`Direction` in `Weekly` dataset, the **Logistic Regression** and the **Linear Discriminant Analysis** models are the best methods based on the accuracy rate with descending order.
+```{r}
+lr_acc %>%
+  bind_rows(lda_acc, qda_acc, knn_acc) %>%
+  arrange(desc(.estimate))
+```
+Alternatively, we may use another method that requires great statistical senses and programming skills to compare several models.
+```{r}
+# crate a model list we yielded before
+allModels <- list("Logistic Regression" = lr_Lag2_fit,
+                  "LDA" = lda_Lag2_fit,
+                  "QDA" = qda_Lag2_fit,
+                  "KNN" = knn_Lag2_fit)
+```
+Then, using the `purrr` package's `imap dfr()`, apply `augment()` to each of the models using the testing data set. `.id = "model` adds a column called "model" to the resulting tibble that contains the names of `allModels`.
+```{r}
+allPreds <- imap_dfr(allModels, augment, 
+                  new_data = weekly_testing, .id = "model")
+
+allPreds %>%
+  select(model, Direction, .pred_class, .pred_Down, .pred_Up) %>%
+  head()
+```
+`yardstick()` package provides multiple different metrics by using `metric_set()`. 
+```{r}
+multi_metric <- metric_set(accuracy, sensitivity, specificity)
+```
+- Using `group_by()` and calculate the metrics for each model. 
+- Using `desc()` to see the model performances with different matrices.
+```{r}
+allPreds %>%
+  group_by(model) %>%
+  multi_metric(truth = Direction, estimate = .pred_class) %>%
+  arrange(desc(.estimate))
+```
+`yardstick()` package also gives a function to create receiver operating characteristic (ROC) curves by using `roc_curve()`. Because the LDA curve is perfectly hidden behind the logistic regression, it is not visible here.
+```{r}
+allPreds %>%
+  group_by(model) %>%
+  roc_curve(Direction, .pred_Down) %>%
+  autoplot() +
+  ggtitle("ROC Curves")
+```
+
+j. (Optional) Experiment with different combinations of predictors for each of the methods. Report the variables, methods, and associated confusion matrix that appears to provide the best results on the held-out data. Note that you can also experiment with different values of K in KNN. (This kind of running many many models and testing on the testing data set many times is not good practice. We will look at ways in later weeks on how we can properly explore multiple models).
+
+There are many methods to select the predictors. In this session, we only focus on the value of neighbors in KNN model. To find the best value of k, take the square root of the total number of observations (1089), which is 33. We will start with 33 neighbors and then look for the best value of k.
+```{r}
+sqrt(nrow(Weekly))
+```
+
+```{r}
+# set a KNN specification
+knn_spec_33 <- nearest_neighbor(neighbors = 33) %>%
+  set_mode("classification") %>%
+  set_engine("kknn")
+```
+
+Fit the K-Nearest Neighbors algorithm model. 
+```{r}
+knn33_Lag2_fit <- fit(knn_spec_33, Direction ~ Lag2, data = weekly_training)
+knn33_Lag2_fit
+```
+The predicted accuracy of the `knn33_Lag2_fit` model is 6% higher than that of the previous KNN model (K=1).
+```{r}
+preds_knn33_Lag2_fit <- augment(knn33_Lag2_fit , new_data = weekly_testing)
+
+# confusion matrix table
+preds_knn33_Lag2_fit %>%
+  conf_mat(truth = Direction, estimate = .pred_class) -> knn33Matrix
+knn33Matrix
+
+# plot the confusion matrix
+knn33Matrix %>%
+  autoplot(type = "heatmap") +
+  theme_tufte() +
+  ggtitle("Confusion Matrix")
+
+# accuracy
+preds_knn33_Lag2_fit %>%
+accuracy(truth = Direction, estimate = .pred_class) %>%
+  mutate(model = "KNN with 33 Neighbors") -> knn33_acc
+bind_rows(knn33_acc, knn_acc) %>%
+  mutate(model = recode(model, "K-Nearest Neighbors" = "KNN with 1 Neighbor"))
+```
+
+# References
 - http://uc-r.github.io/discriminant_analysis
+- https://emilhvitfeldt.github.io/ISLR-tidymodels-labs/classification.html
+- https://rstudio-pubs-static.s3.amazonaws.com/316172_a857ca788d1441f8be1bcd1e31f0e875.html
