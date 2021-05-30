@@ -40,7 +40,7 @@ $$
 $$
 \hat{p}(X) = \frac{e^{-6 + 0.05*40 + 1*3.5}}{(1 + e^{-6 + 0.05*40 + 1*3.5})} = 0.3775407
 $$
-We can create a function to compute the probability, the answer is p = 37.8 %.
+We also can create a function to compute the probability, the answer is p = 37.8 %.
 ```{r}
 prob <- function(x1,x2){
   stopifnot(is.numeric(x1) & is.numeric(x2))
@@ -72,19 +72,40 @@ probs %>%
 
 Suppose that we take a data set, divide it into equally-sized training and test sets, and then try out two different classification procedures. First, we use logistic regression and get an error rate of 20% on the training data and 30% on the test data. Next, we use 1-nearest neighbors (i.e. $K = 1$) and get an average error rate (averaged over both test and training data sets) of 18%. Based on these results, which method should we prefer to use for classification of new observations? Why?
 
+The training error and the test error are two important concepts using in machine learning. 
+
+- Training Error: This is obtained by calculating a model's classification error on the same data that the model was trained on.
+- Test Error: This is obtained by using two completely disjoint datasets but in the same dataset: one for training the model and the other for calculating the classification error. The first dataset is save as training data, and the second is save as test data.
+
+We calculate the test error rate when we calculate the error on data that was **unknown** during the training phase. In this question, we should focus on **test error rate**.
+
+According to the question, we can conclude:
+
+- LR training error: 20%
+- LR test error:30 %
+- KNN(n=1) average error: 18% (averaged over both test and training data sets)
+- KNN(n=1) training error: 0% so KNN(n=1) test error: 36% as (x+ 0)/2 = 18, x = 36
+
+Even though the average error rate is 18% for KNN classification procedure, with K=1, the KNN training error rate is actually 0%. This means that we do not make any error on the training data within this setting. This leads to a test error of 36% since the average error rate is 18%. In conclusion, the test error rate of KNN is 36%, which is higher than the test error rate of logistic regression, which is 30%. Therefore, we prefer to use logistic regression for classification of new observations. 
+
 # Exercise 3 (15 points)
 You will in this exercise examine the differences between LDA and QDA.
 
 a) If the Bayes decision boundary is linear, do we expect LDA or QDA to perform better on the training set? On the test set?
 
+- We anticipate that QDA will outperform on the training set because its greater flexibility may result in a better fit. But LDA does not bad on the training set. On the test set, LDA is better because the Bayes decision boundary is linear. QDA will causes overfitting problem. 
 
 b) If the Bayes decision boundary is non-linear, do we expect LDA or QDA to perform better on the training set? On the test set?
 
+- The answer is the opposite of the previous question. QDA will perform better in training and testing sets because the Bayes decision boundary is non-linear. QDA, for example, excels at the curve pattern. LDA isn't very good at non-linear patterns.
+
 c) In general, as the sample size n increases, do we expect the test prediction accuracy or QDA relative to LDA to improve, decline, or be unchanged? Why?
+
+- QDA is recommended if the training set is super large, so that the variance of the classifier is not a major concern. That is, if the sample size is large enough, the higher variance is no longer a problem, and QDA performs better.
 
 d) True or False: Even if the Bayes decision boundary for a given problem is linear, we will probably achieve a superior test error rate using QDA rather than LDA because QDA is flexible enough to model a linear decision boundary. Justify your answer.
 
-Ans: False. 
+- Ans: False. In comparison to QDA, LDA has a lower variance. Despite the fact that LDA is a less flexible classifier than QDA, it has a lower variance and is therefore more exact, especially in small datasets.
 
 # Exercise 4 (20 points)
 
@@ -135,7 +156,7 @@ lr_fit
 ```
 d) Inspect the model with `summary()` and `tidy()`. Which of the variables are significant?
 
-According to the outcomes of two tables below, we find `intercept`, `weight` and `year` predictors are significant. That is, $b_0$, $b_4$, and $b_6$.
+According to the outcomes of two tables below, we find `intercept`, `weight` and `year` are significant. That is, $b_0$, $b_4$, and $b_6$. The significant variables are `weight` and `year`.
 ```{r}
 # using summary()
 lr_fit %>%
@@ -196,6 +217,7 @@ a. Produce some numerical and graphical summaries of the data. Does there appear
 Although we can see the approximate range value for each variable, the summary table does not reveal any significant relationship between these variables.
 ```{r}
 # numerical summary
+dim(Weekly)
 summary(Weekly)
 ```
 
@@ -212,6 +234,7 @@ corrplot(cor(Weekly[1:8]), method="square")
 ```
 
 This plot depicts an increasing volume of stock trading over time; the volume continues to rise as time passes. Is everyone now wealthy?
+- `Direction`: A factor with levels Down and Up indicating whether the market had a positive or negative return on a given week. That is, `Down` = positive, `Up` = negative.
 ```{r}
 Weekly %>%
   ggplot(aes(as.factor(Year), Volume)) +
@@ -430,6 +453,10 @@ multi_metric <- metric_set(accuracy, sensitivity, specificity)
 ```
 - Using `group_by()` and calculate the metrics for each model. 
 - Using `desc()` to see the model performances with different matrices.
+- The following graph is good at knowing what is sensitivity and specificity.
+![](pics/hw2.1.png)
+
+
 ```{r}
 allPreds %>%
   group_by(model) %>%
@@ -491,3 +518,5 @@ bind_rows(knn33_acc, knn_acc) %>%
 - http://uc-r.github.io/discriminant_analysis
 - https://emilhvitfeldt.github.io/ISLR-tidymodels-labs/classification.html
 - https://rstudio-pubs-static.s3.amazonaws.com/316172_a857ca788d1441f8be1bcd1e31f0e875.html
+- “An Introduction to Statistical Learning with Applications in R” by G. James, D. Witten, T. Hastie, and R. Tibshirani; Springer, 2013. ISBN 1461471370
+- https://rapidminer.com/blog/validate-models-training-test-error/
