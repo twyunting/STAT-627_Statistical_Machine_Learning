@@ -1,0 +1,141 @@
+---
+title: "STAT-627 Assignment 3"
+author: "Yunting Chiu"
+date: "`r Sys.Date()`"
+output:
+  html_document: 
+    number_sections: yes
+    theme: cerulean
+    highlight: kate
+urlcolor: blue
+---
+
+```{r setup, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidymodels)
+library(corrplot)
+library(ggthemes)
+library(discrim)
+library(leaps)
+```
+In this assignment, I will be using [Tidymodels](https://www.tidymodels.org/) instead of base R to do coding.
+
+# Exercise 1 (10 points)
+
+Review of *k*-fold cross-validation.
+
+a. Explain how *k*-fold cross-validation is implemented.
+b. What are the advantages and disadvantages of *k*-fold cross-validation relative to
+    - The validation set approach
+    - LOOCV
+
+# Exercise 2 (10 points)
+
+Denote whether the following statements are true or false. Explain your reasoning.
+
+a. When $k = n$ the cross-validation estimator is approximately unbiased for the true prediction error.
+b. When $k = n$ the cross-validation estimator will always have a low variance.
+c. Statistical transformations on the predictors, such as scaling and centering, must be done inside each fold.
+
+# Exercise 3 (20 points)
+
+This exercise should be answered using the `Weekly` data set, which is part of the `LSLR` package. If you don't have it installed already you can install it with
+
+```{r}
+install.packages("ISLR")
+```
+
+To load the data set run the following code
+
+```{r}
+library(ISLR)
+data("Weekly")
+```
+
+a. Create a test and training set using `initial_split()`. Split proportion is up to you. Remember to set a seed!
+b. Create a logistic regression specification using `logistic_reg()`. Set the engine to `glm`.
+c. Create a 5-fold cross-validation object using the training data, and fit the resampled folds with `fit_resamples()` and `Direction` as the response and the five lag variables plus `Volume` as predictors. Remember to set a seed before creating k-fold object.
+d. Collect the performance metrics using `collect_metrics()`. Interpret.
+e. Fit the model on the whole training data set. Calculate the accuracy on the test set. How does this result compare to results in d. Interpret. 
+
+
+# Exercise 4 (15 points)
+
+We will now derive the probability that a given observation is part of a bootstrap sample. 
+Suppose that we obtain a bootstrap sample from a set of $n$ observations.
+
+a. What is the probability that the first bootstrap observation is *not* the $j$th observation from the original sample? Justify your answer.
+b. What is the probability that the second bootstrap observation is *not* the $j$th observation from the original sample? Justify your answer.
+c. Argue that the probability that the $j$th observation is *not* in the bootstrap sample is $(1-1/n)^n$.
+d. When $n = 5$ what is the probability that the $j$th observation is in the bootstrap sample?
+e. When $n = 100$ what is the probability that the $j$th observation is in the bootstrap sample?
+f. When $n = 10,000$ what is the probability that the $j$th observation is in the bootstrap sample?
+g. Create a plot that displays, for each integer value of $n$ from 1 to 100,000 the probability that the $j$th observation is in the bootstrap sample. Comment on what you observe.
+h. We will now investigate numerically that a bootstrap sample of size $n = 100$ contains the $j$th observation. Here $j = 4$. We repeatedly create bootstrap samples, and each time we record whether or not the fourth observation is contained in the bootstrap sample.
+
+```{r}
+set.seed(  ) # set a seed here
+store <- integer(10000)
+for (i in seq_along(store)) {
+  store[i] <- sum(sample(seq_len(100), replace = TRUE) == 4) > 0
+}
+mean(store)
+```
+
+Comment on the results obtained.
+
+# Exercise 5 (10 points)
+
+Suppose that we use some statistical learning method to make a prediction for the response $Y$ for a particular value of the predictor $X$. 
+
+a. Carefully describe how we might estimate the standard deviation of our prediction.
+b. Is this procedure depends on what statistical learning method we are using?
+
+# Exercise 6 (15 points)
+
+This exercise should be answered using the `Default` data set, which is part of the `LSLR` package. If you don't have it installed already you can install it with
+
+```{r}
+install.packages("ISLR")
+```
+
+To load the data set run the following code
+
+```{r}
+library(ISLR)
+data("Default")
+```
+
+a. Use the `parsnip` package to fit a logistic regression on the `default` data set. `default` is the response and `income` and `balance` are the predictors. Then use `summary()` on the fitted model to determine the estimated standard errors for the coefficients associated with `income` and `balance`. Comment on the estimated standard errors.
+b. Use the `bootstraps()` function from the `rsample` package to generate 25 bootstraps of `Default`.
+c. Run the following code. Change `boots` to the name of the bootstrapping object created in the previous question. This will take a minute or two to run. Comment on 
+
+```{r}
+# This function takes a `bootstrapped` split object, and fits a logistic model
+fit_lr_on_bootstrap <- function(split) {
+    logistic_reg() %>%
+    set_engine("glm") %>%
+    set_mode("classification") %>%
+    fit(default ~ income + balance, analysis(split))
+}
+# This code uses `map()` to run the model inside each split. Then it used
+# `tidy()` to extract the model estimates the parameter
+boot_models <-
+  boots %>% 
+  mutate(model = map(splits, fit_lr_on_bootstrap),
+         coef_info = map(model, tidy))
+# This code extract the estimates for each model that was fit
+boot_coefs <-
+  boot_models %>% 
+  unnest(coef_info)
+# This code calculates the standard deviation of the estimate
+sd_estimates <- boot_coefs %>%
+  group_by(term) %>%
+  summarise(std.error_est = sd(estimate))
+sd_estimates
+```
+
+a. Comment on the estimated standard errors obtained using the `summary()` function on the first model and the estimated standard errors you found using the above code.
+
+# References
