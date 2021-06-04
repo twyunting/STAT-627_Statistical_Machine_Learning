@@ -12,11 +12,116 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Libraries and Data
+
+```{r, warning=FALSE}
+library(tidymodels) # Includes the workflows package
+library(tidyverse)
+library(ISLR)
+data("mlc_churn")
+```
+# Leave-One-Out Cross-Validation
 Create a test-train `rsplit` object of `mlc_churn` using `initial_split()`. Use the arguments to set the proportions of the training data to be 80%. Stratify the sampling according to the `churn` variable.
 
-a. Create a LDA model specification.
-b. Create a 10-fold cross-validation split object.
-c. Fit the model within each of the folds.
-d. Extract the performance metrics for each fold.
+```{r}
+# see the first six observations from the data
+head(mlc_churn)
+set.seed(1234)
+mlc_split <- initial_split(mlc_churn, prop = 0.8, strata = churn)
+mlc_split
 
+# splitting the data to the training set
+mlc_train <- training(mlc_split)
+```
+
+a.  Create a LDA model specification.
+
+The `workflows` package allows the user to bind modeling and preprocessing objects together. 
+```{r}
+lda_spec <- discrim::discrim_linear() %>%
+  set_mode("classification") %>%
+  set_engine("MASS")
+
+# create a workflow object
+lda_wf <- workflow() %>%
+  add_model(lda_spec) %>%
+  add_formula(churn ~ total_intl_charge + account_length)
+```
+
+b.  Create a 10-fold cross-validation split object.
+```{r}
+mlc_folds <- vfold_cv(mlc_train, v = 10, strata = churn) # repeats = 1
+mlc_folds$splits
+```
+c.  Fit the model within each of the folds.
+```{r}
+fit_folds <- fit_resamples(lda_wf, resamples = mlc_folds, 
+                           control = control_resamples(save_pred = TRUE))
+```
+
+d.  Extract the performance metrics for each fold.
+
+Exemplification of calculating the accuracy metric for each fold.
+```{r}
+fit_folds %>%
+  collect_metrics(summarize = FALSE) %>%
+  filter(.metric == "accuracy") %>%
+  select(-.estimator)
+```
+
+The confusion matrix is depicted below.
+```{r}
+fit_folds %>%
+  collect_predictions() %>%
+  # filter(id == "Fold01") %>%
+  conf_mat(truth = churn, estimate = .pred_class)
+```
+
+The model has 86 % predicted accuracy on testing set.
+```{r}
+final_fit <- fit(lda_wf, data = mlc_train)
+augment(final_fit, new_data = testing(mlc_split)) %>%
+  accuracy(truth = churn, estimate = .pred_class)
+```
+
+# The Bootstraps
 Repeat the above steps, but create 10 bootstraps instead. What does the different results mean?
+
+Let's take a look at what's going on.
+
+b.  Create a 10 bootstraps split object.
+```{r}
+mlc_boots <- bootstraps(mlc_train,strata = churn, time = 10) # repeats = 1
+mlc_boots$splits
+```
+
+c.  Fit the model within each of the folds.
+We can use `fit_resamples()` to fit the workflow that we created within each bootstrap in `tune` package.
+```{r}
+fit_boots <- fit_resamples(lda_wf, resamples = mlc_boots, 
+                           control = control_resamples(save_pred = TRUE))
+fit_boots$.metrics
+```
+
+d.  Extract the performance metrics for each fold.
+
+For **each** extraction, we need to write down `summarize = FALSE` in `collect_metrics()` in order to allows us the see the individual performance metrics for each fold.
+```{r}
+fit_boots %>%
+  collect_metrics(summarize = FALSE) 
+```
+Here is a confusion metrix of 10 bootstraps.
+```{r}
+fit_boots %>%
+  collect_predictions() %>%
+  conf_mat(truth = churn, estimate = .pred_class)
+```
+# Comparison
+The mean accuracy of 10-fold cross-validation is comparable to that of 10 bootstraps. Cross-Validation provides estimates of the test error, and Bootstrap provides the standard error of the estimates. A bootstrapped data collection may contain numerous occurrences of the same original cases and may completely miss other original cases due to the drawing with replacement. Cross validation resamples without replacing data, resulting in smaller surrogate data sets than the original. It does not have an obvious result in this data set.
+```{r}
+fit_folds %>%
+  collect_metrics() 
+fit_boots %>%
+  collect_metrics() 
+```
+
