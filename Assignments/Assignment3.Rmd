@@ -116,7 +116,7 @@ lr_spec
 ```
 
 c.  Create a 5-fold cross-validation object using the training data, and fit the resampled folds with `fit_resamples()` and `Direction` as the response and the five lag variables plus `Volume` as predictors. Remember to set a seed before creating k-fold object.
-- In `fit_resamples`, .predictions` is present when `save_pred = TRUE`. This list column contains tibbles with the out-of-sample predictions.
+- In `fit_resamples`, `.predictions` is present when `save_pred = TRUE`. This list column contains tibbles with the out-of-sample predictions.
 ```{r}
 # create a workflow object
 lr_wf <- workflow() %>%
@@ -245,25 +245,41 @@ This is a supervised learning. Regression and classification are two types of su
 
 # Exercise 6 (15 points)
 
-This exercise should be answered using the `Default` data set, which is
-part of the `LSLR` package. If you don't have it installed already you
-can install it with
+This exercise should be answered using the `Default` data set, which is part of the `LSLR` package. If you don't have it installed already you can install it with
 ```{r}
 #install.packages("ISLR")
 ```
 
 To load the data set run the following code
-
 ```{r}
 library(ISLR)
 data("Default")
+head(Default)
 ```
 
 a.  Use the `parsnip` package to fit a logistic regression on the `default` data set. `default` is the response and `income` and `balance` are the predictors. Then use `summary()` on the fitted model to determine the estimated standard errors for the coefficients associated with `income` and `balance`. Comment on the estimated standard errors.
+
+In the real data, we can see the p-value of intercept, $b_1$, and $b_2$ are totally in the significant level. The smaller the standard error, the more precise the estimate. The standard error indicates how close any `income` and `balance` of that population's mean is likely to be to the true population mean. The estimated standard error of `income` is 0.000004985, and the estimated standard error of `balance` is 0.4348.
+```{r}
+lr_spec %>%
+  fit(default ~ income + balance, data = Default) -> lr_fit
+lr_fit
+
+lr_fit %>%
+  pluck("fit") -> lr_fit_fit
+summary(lr_fit_fit)
+```
+
 b.  Use the `bootstraps()` function from the `rsample` package to generate 25 bootstraps of `Default`.
+```{r}
+default_boots <- bootstraps(Default, strata = default, time = 25) 
+default_boots 
+```
+
 c.  Run the following code. Change `boots` to the name of the bootstrapping object created in the previous question. This will take a minute or two to run. Comment on
 
-```{r, error=TRUE}
+-  Changed `boots` to `default_boots`.
+```{r}
 # This function takes a `bootstrapped` split object, and fits a logistic model
 fit_lr_on_bootstrap <- function(split) {
     logistic_reg() %>%
@@ -274,7 +290,7 @@ fit_lr_on_bootstrap <- function(split) {
 # This code uses `map()` to run the model inside each split. Then it used
 # `tidy()` to extract the model estimates the parameter
 boot_models <-
-  boots %>% 
+  default_boots %>% # changed name
   mutate(model = map(splits, fit_lr_on_bootstrap),
          coef_info = map(model, tidy))
 # This code extract the estimates for each model that was fit
@@ -288,9 +304,17 @@ sd_estimates <- boot_coefs %>%
 sd_estimates
 ```
 
-a.  Comment on the estimated standard errors obtained using the
-    `summary()` function on the first model and the estimated standard
-    errors you found using the above code.
+a.  Comment on the estimated standard errors obtained using the `summary()` function on the first model and the estimated standard errors you found using the above code.
+
+In the Bootstrap method, we take random samples from the population, and we would expect $\hat{balance}$ to differ from `balance` by approximately 0.00017, and except $\hat{income}$ to differ from `income` by approximately 0.0000005, on average. Look at the `diff` column, which indicates the different values between first model and the estimated standard errors that we bootstrapped split object. The small different values means the Bootstrap resampling method is close to the ground truth.
+```{r}
+summary(lr_fit_fit)$coefficients %>%
+  as_tibble() %>%
+  rename(std.error_real = "Std. Error") %>%
+  select(std.error_real) -> tmp
+bind_cols(sd_estimates, tmp) %>%
+  mutate(diff = abs(std.error_est - std.error_real))
+```
 
 # References
 - https://www.tmwr.org/resampling.html

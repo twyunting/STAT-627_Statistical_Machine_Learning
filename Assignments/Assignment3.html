@@ -11,7 +11,7 @@
 
 <meta name="author" content="Yunting Chiu" />
 
-<meta name="date" content="2021-06-04" />
+<meta name="date" content="2021-06-06" />
 
 <title>STAT-627 Assignment 3</title>
 
@@ -253,7 +253,7 @@ pre code {
 
 <h1 class="title toc-ignore">STAT-627 Assignment 3</h1>
 <h4 class="author">Yunting Chiu</h4>
-<h4 class="date">2021-06-04</h4>
+<h4 class="date">2021-06-06</h4>
 
 </div>
 
@@ -372,7 +372,7 @@ pre code {
 <li>Create a 5-fold cross-validation object using the training data, and fit the resampled folds with <code>fit_resamples()</code> and <code>Direction</code> as the response and the five lag variables plus <code>Volume</code> as predictors. Remember to set a seed before creating k-fold object.</li>
 </ol>
 <ul>
-<li>In <code>fit_resamples</code>, .predictions<code>is present when</code>save_pred = TRUE`. This list column contains tibbles with the out-of-sample predictions.</li>
+<li>In <code>fit_resamples</code>, <code>.predictions</code> is present when <code>save_pred = TRUE</code>. This list column contains tibbles with the out-of-sample predictions.</li>
 </ul>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create a workflow object</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>lr_wf <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">%&gt;%</span></span>
@@ -387,39 +387,39 @@ pre code {
 <span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>                                <span class="at">control =</span> <span class="fu">control_resamples</span>(<span class="at">save_pred =</span> <span class="cn">TRUE</span>))</span>
 <span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>fit_weekly_cv5<span class="sc">$</span>.metrics</span></code></pre></div>
 <pre><code>## [[1]]
-## # A tibble: 2 x 3
-##   .metric  .estimator .estimate
-##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt;
-## 1 accuracy binary         0.571
-## 2 roc_auc  binary         0.614
+## # A tibble: 2 x 4
+##   .metric  .estimator .estimate .config             
+##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy binary         0.571 Preprocessor1_Model1
+## 2 roc_auc  binary         0.614 Preprocessor1_Model1
 ## 
 ## [[2]]
-## # A tibble: 2 x 3
-##   .metric  .estimator .estimate
-##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt;
-## 1 accuracy binary         0.583
-## 2 roc_auc  binary         0.540
+## # A tibble: 2 x 4
+##   .metric  .estimator .estimate .config             
+##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy binary         0.583 Preprocessor1_Model1
+## 2 roc_auc  binary         0.540 Preprocessor1_Model1
 ## 
 ## [[3]]
-## # A tibble: 2 x 3
-##   .metric  .estimator .estimate
-##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt;
-## 1 accuracy binary         0.554
-## 2 roc_auc  binary         0.559
+## # A tibble: 2 x 4
+##   .metric  .estimator .estimate .config             
+##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy binary         0.554 Preprocessor1_Model1
+## 2 roc_auc  binary         0.559 Preprocessor1_Model1
 ## 
 ## [[4]]
-## # A tibble: 2 x 3
-##   .metric  .estimator .estimate
-##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt;
-## 1 accuracy binary         0.529
-## 2 roc_auc  binary         0.477
+## # A tibble: 2 x 4
+##   .metric  .estimator .estimate .config             
+##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy binary         0.529 Preprocessor1_Model1
+## 2 roc_auc  binary         0.477 Preprocessor1_Model1
 ## 
 ## [[5]]
-## # A tibble: 2 x 3
-##   .metric  .estimator .estimate
-##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt;
-## 1 accuracy binary         0.569
-## 2 roc_auc  binary         0.491</code></pre>
+## # A tibble: 2 x 4
+##   .metric  .estimator .estimate .config             
+##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy binary         0.569 Preprocessor1_Model1
+## 2 roc_auc  binary         0.491 Preprocessor1_Model1</code></pre>
 <ol start="4" style="list-style-type: lower-alpha">
 <li>Collect the performance metrics using <code>collect_metrics()</code>.Interpret.</li>
 </ol>
@@ -429,14 +429,14 @@ pre code {
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>fit_weekly_cv5 <span class="sc">%&gt;%</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect_metrics</span>(<span class="at">summarize =</span> <span class="cn">FALSE</span>) <span class="sc">%&gt;%</span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.metric <span class="sc">==</span> <span class="st">&quot;accuracy&quot;</span> )</span></code></pre></div>
-<pre><code>## # A tibble: 5 x 4
-##   id    .metric  .estimator .estimate
-##   &lt;chr&gt; &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt;
-## 1 Fold1 accuracy binary         0.571
-## 2 Fold2 accuracy binary         0.583
-## 3 Fold3 accuracy binary         0.554
-## 4 Fold4 accuracy binary         0.529
-## 5 Fold5 accuracy binary         0.569</code></pre>
+<pre><code>## # A tibble: 5 x 5
+##   id    .metric  .estimator .estimate .config             
+##   &lt;chr&gt; &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+## 1 Fold1 accuracy binary         0.571 Preprocessor1_Model1
+## 2 Fold2 accuracy binary         0.583 Preprocessor1_Model1
+## 3 Fold3 accuracy binary         0.554 Preprocessor1_Model1
+## 4 Fold4 accuracy binary         0.529 Preprocessor1_Model1
+## 5 Fold5 accuracy binary         0.569 Preprocessor1_Model1</code></pre>
 <ol start="5" style="list-style-type: lower-alpha">
 <li>Fit the model on the whole training data set. Calculate the accuracy on the test set. How does this result compare to results in d. Interpret.</li>
 </ol>
@@ -513,7 +513,7 @@ pre code {
 <span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  store[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">sample</span>(<span class="fu">seq_len</span>(<span class="dv">100</span>), <span class="at">replace =</span> <span class="cn">TRUE</span>) <span class="sc">==</span> <span class="dv">4</span>) <span class="sc">&gt;</span> <span class="dv">0</span></span>
 <span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(store)</span></code></pre></div>
-<pre><code>## [1] 0.6324</code></pre>
+<pre><code>## [1] 0.6337</code></pre>
 <p>Comment on the results obtained.</p>
 <p>The simulation indicates that this appears to be correct, with 63.2 percent containing 4th observation, on average. Even with large datasets, there is always approximate a 63 % chance that any particular thing will be in the bootstrap sample.</p>
 </div>
@@ -528,7 +528,7 @@ pre code {
 <ol start="2" style="list-style-type: lower-alpha">
 <li>Is this procedure depends on what statistical learning method we are using?</li>
 </ol>
-<p>This is a supervised learning. Regression and classification are two types of supervised machine learning techniques, while clustering and association are two types of Unsupervised learning. The supervised learning indicates that <strong>some data has already been tagged with the correct answer</strong>, as demonstrated by the previous questions and examples.</p>
+<p>This is a supervised learning. Regression and classification are two types of supervised machine learning techniques, while clustering and association are two types of unsupervised learning. The supervised learning indicates that <strong>some data has already been tagged with the correct answer</strong>, as demonstrated by the previous questions and examples.</p>
 </div>
 <div id="exercise-6-15-points" class="section level1" number="6">
 <h1 number="6"><span class="header-section-number">6</span> Exercise 6 (15 points)</h1>
@@ -536,41 +536,133 @@ pre code {
 <div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co">#install.packages(&quot;ISLR&quot;)</span></span></code></pre></div>
 <p>To load the data set run the following code</p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ISLR)</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;Default&quot;</span>)</span></code></pre></div>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;Default&quot;</span>)</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(Default)</span></code></pre></div>
+<pre><code>##   default student   balance    income
+## 1      No      No  729.5265 44361.625
+## 2      No     Yes  817.1804 12106.135
+## 3      No      No 1073.5492 31767.139
+## 4      No      No  529.2506 35704.494
+## 5      No      No  785.6559 38463.496
+## 6      No     Yes  919.5885  7491.559</code></pre>
 <ol style="list-style-type: lower-alpha">
 <li>Use the <code>parsnip</code> package to fit a logistic regression on the <code>default</code> data set. <code>default</code> is the response and <code>income</code> and <code>balance</code> are the predictors. Then use <code>summary()</code> on the fitted model to determine the estimated standard errors for the coefficients associated with <code>income</code> and <code>balance</code>. Comment on the estimated standard errors.</li>
+</ol>
+<p>In the real data, we can see the p-value of intercept, <span class="math inline">\(b_1\)</span>, and <span class="math inline">\(b_2\)</span> are totally in the significant level. The smaller the standard error, the more precise the estimate. The standard error indicates how close any <code>income</code> and <code>balance</code> of that population’s mean is likely to be to the true population mean. The estimated standard error of <code>income</code> is 0.000004985, and the estimated standard error of <code>balance</code> is 0.4348.</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>lr_spec <span class="sc">%&gt;%</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit</span>(default <span class="sc">~</span> income <span class="sc">+</span> balance, <span class="at">data =</span> Default) <span class="ot">-&gt;</span> lr_fit</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>lr_fit</span></code></pre></div>
+<pre><code>## parsnip model object
+## 
+## Fit time:  46ms 
+## 
+## Call:  stats::glm(formula = default ~ income + balance, family = stats::binomial, 
+##     data = data)
+## 
+## Coefficients:
+## (Intercept)       income      balance  
+##  -1.154e+01    2.081e-05    5.647e-03  
+## 
+## Degrees of Freedom: 9999 Total (i.e. Null);  9997 Residual
+## Null Deviance:       2921 
+## Residual Deviance: 1579  AIC: 1585</code></pre>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>lr_fit <span class="sc">%&gt;%</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pluck</span>(<span class="st">&quot;fit&quot;</span>) <span class="ot">-&gt;</span> lr_fit_fit</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(lr_fit_fit)</span></code></pre></div>
+<pre><code>## 
+## Call:
+## stats::glm(formula = default ~ income + balance, family = stats::binomial, 
+##     data = data)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.4725  -0.1444  -0.0574  -0.0211   3.7245  
+## 
+## Coefficients:
+##               Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept) -1.154e+01  4.348e-01 -26.545  &lt; 2e-16 ***
+## income       2.081e-05  4.985e-06   4.174 2.99e-05 ***
+## balance      5.647e-03  2.274e-04  24.836  &lt; 2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 2920.6  on 9999  degrees of freedom
+## Residual deviance: 1579.0  on 9997  degrees of freedom
+## AIC: 1585
+## 
+## Number of Fisher Scoring iterations: 8</code></pre>
+<ol start="2" style="list-style-type: lower-alpha">
 <li>Use the <code>bootstraps()</code> function from the <code>rsample</code> package to generate 25 bootstraps of <code>Default</code>.</li>
+</ol>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>default_boots <span class="ot">&lt;-</span> <span class="fu">bootstraps</span>(Default, <span class="at">strata =</span> default, <span class="at">time =</span> <span class="dv">25</span>) </span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>default_boots </span></code></pre></div>
+<pre><code>## # Bootstrap sampling using stratification 
+## # A tibble: 25 x 2
+##    splits               id         
+##    &lt;list&gt;               &lt;chr&gt;      
+##  1 &lt;split [10000/3688]&gt; Bootstrap01
+##  2 &lt;split [10000/3640]&gt; Bootstrap02
+##  3 &lt;split [10000/3658]&gt; Bootstrap03
+##  4 &lt;split [10000/3705]&gt; Bootstrap04
+##  5 &lt;split [10000/3708]&gt; Bootstrap05
+##  6 &lt;split [10000/3739]&gt; Bootstrap06
+##  7 &lt;split [10000/3704]&gt; Bootstrap07
+##  8 &lt;split [10000/3684]&gt; Bootstrap08
+##  9 &lt;split [10000/3678]&gt; Bootstrap09
+## 10 &lt;split [10000/3648]&gt; Bootstrap10
+## # … with 15 more rows</code></pre>
+<ol start="3" style="list-style-type: lower-alpha">
 <li>Run the following code. Change <code>boots</code> to the name of the bootstrapping object created in the previous question. This will take a minute or two to run. Comment on</li>
 </ol>
-<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># This function takes a `bootstrapped` split object, and fits a logistic model</span></span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>fit_lr_on_bootstrap <span class="ot">&lt;-</span> <span class="cf">function</span>(split) {</span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">logistic_reg</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">set_engine</span>(<span class="st">&quot;glm&quot;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">set_mode</span>(<span class="st">&quot;classification&quot;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">fit</span>(default <span class="sc">~</span> income <span class="sc">+</span> balance, <span class="fu">analysis</span>(split))</span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="co"># This code uses `map()` to run the model inside each split. Then it used</span></span>
-<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="co"># `tidy()` to extract the model estimates the parameter</span></span>
-<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>boot_models <span class="ot">&lt;-</span></span>
-<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>  boots <span class="sc">%&gt;%</span> </span>
-<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">model =</span> <span class="fu">map</span>(splits, fit_lr_on_bootstrap),</span>
-<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>         <span class="at">coef_info =</span> <span class="fu">map</span>(model, tidy))</span></code></pre></div>
-<pre><code>## Error in mutate(., model = map(splits, fit_lr_on_bootstrap), coef_info = map(model, : object &#39;boots&#39; not found</code></pre>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># This code extract the estimates for each model that was fit</span></span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>boot_coefs <span class="ot">&lt;-</span></span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  boot_models <span class="sc">%&gt;%</span> </span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(coef_info)</span></code></pre></div>
-<pre><code>## Error in unnest(., coef_info): object &#39;boot_models&#39; not found</code></pre>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># This code calculates the standard deviation of the estimate</span></span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>sd_estimates <span class="ot">&lt;-</span> boot_coefs <span class="sc">%&gt;%</span></span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(term) <span class="sc">%&gt;%</span></span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">std.error_est =</span> <span class="fu">sd</span>(estimate))</span></code></pre></div>
-<pre><code>## Error in group_by(., term): object &#39;boot_coefs&#39; not found</code></pre>
-<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>sd_estimates</span></code></pre></div>
-<pre><code>## Error in eval(expr, envir, enclos): object &#39;sd_estimates&#39; not found</code></pre>
+<ul>
+<li>Changed <code>boots</code> to <code>default_boots</code>.</li>
+</ul>
+<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># This function takes a `bootstrapped` split object, and fits a logistic model</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>fit_lr_on_bootstrap <span class="ot">&lt;-</span> <span class="cf">function</span>(split) {</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">logistic_reg</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">set_engine</span>(<span class="st">&quot;glm&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">set_mode</span>(<span class="st">&quot;classification&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">fit</span>(default <span class="sc">~</span> income <span class="sc">+</span> balance, <span class="fu">analysis</span>(split))</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a><span class="co"># This code uses `map()` to run the model inside each split. Then it used</span></span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a><span class="co"># `tidy()` to extract the model estimates the parameter</span></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>boot_models <span class="ot">&lt;-</span></span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>  default_boots <span class="sc">%&gt;%</span> <span class="co"># changed name</span></span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">model =</span> <span class="fu">map</span>(splits, fit_lr_on_bootstrap),</span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>         <span class="at">coef_info =</span> <span class="fu">map</span>(model, tidy))</span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a><span class="co"># This code extract the estimates for each model that was fit</span></span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>boot_coefs <span class="ot">&lt;-</span></span>
+<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a>  boot_models <span class="sc">%&gt;%</span> </span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(coef_info)</span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a><span class="co"># This code calculates the standard deviation of the estimate</span></span>
+<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a>sd_estimates <span class="ot">&lt;-</span> boot_coefs <span class="sc">%&gt;%</span></span>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(term) <span class="sc">%&gt;%</span></span>
+<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">std.error_est =</span> <span class="fu">sd</span>(estimate))</span>
+<span id="cb33-22"><a href="#cb33-22" aria-hidden="true" tabindex="-1"></a>sd_estimates</span></code></pre></div>
+<pre><code>## # A tibble: 3 x 2
+##   term        std.error_est
+##   &lt;chr&gt;               &lt;dbl&gt;
+## 1 (Intercept)    0.479     
+## 2 balance        0.000243  
+## 3 income         0.00000467</code></pre>
 <ol style="list-style-type: lower-alpha">
 <li>Comment on the estimated standard errors obtained using the <code>summary()</code> function on the first model and the estimated standard errors you found using the above code.</li>
 </ol>
+<p>In the Bootstrap method, we take random samples from the population, and we would expect <span class="math inline">\(\hat{balance}\)</span> to differ from <code>balance</code> by approximately 0.00017, and except <span class="math inline">\(\hat{income}\)</span> to differ from <code>income</code> by approximately 0.0000005, on average. Look at the <code>diff</code> column, which indicates the different values between first model and the estimated standard errors that we bootstrapped split object. The small different values means the Bootstrap resampling method is close to the ground truth.</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(lr_fit_fit)<span class="sc">$</span>coefficients <span class="sc">%&gt;%</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">std.error_real =</span> <span class="st">&quot;Std. Error&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(std.error_real) <span class="ot">-&gt;</span> tmp</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a><span class="fu">bind_cols</span>(sd_estimates, tmp) <span class="sc">%&gt;%</span></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff =</span> <span class="fu">abs</span>(std.error_est <span class="sc">-</span> std.error_real))</span></code></pre></div>
+<pre><code>## # A tibble: 3 x 4
+##   term        std.error_est std.error_real     diff
+##   &lt;chr&gt;               &lt;dbl&gt;          &lt;dbl&gt;    &lt;dbl&gt;
+## 1 (Intercept)    0.479          0.435      0.0440  
+## 2 balance        0.000243       0.00000499 0.000238
+## 3 income         0.00000467     0.000227   0.000223</code></pre>
 </div>
 <div id="references" class="section level1" number="7">
 <h1 number="7"><span class="header-section-number">7</span> References</h1>

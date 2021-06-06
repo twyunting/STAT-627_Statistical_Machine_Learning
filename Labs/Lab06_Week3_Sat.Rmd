@@ -1,0 +1,199 @@
+---
+title: "K-means Clustering"
+author: "Yunting Chiu"
+date: "`r Sys.Date()`"
+output:
+  html_document: 
+    theme: cerulean
+    highlight: zenburn
+---
+```{r setup, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Palmer Station Penguin Data 
+We will be using the [palmerpenguins](https://allisonhorst.github.io/palmerpenguins/) data set for this lab.
+
+We will also be needing to load the [broom](https://broom.tidymodels.org/) package
+
+```{r}
+library(palmerpenguins)
+library(broom)
+library(tidymodels)
+library(tidyverse)
+# our data set
+head(penguins)
+```
+a. Transform the data set into a matrix using two of the numeric variables
+```{r}
+# tidyverse style
+penguins %>%
+  select(bill_length_mm, bill_depth_mm) %>%
+  drop_na() %>%
+  as.matrix() -> pen2
+pen2 %>%
+  nrow() # the matrix has 342 observations
+# Base R style
+penn <- as.matrix(penguins[, c("bill_length_mm", "bill_depth_mm")])
+```
+# 3 Clusters
+b. Perform k-means using 3 clusters
+- The first to third observations is 85, 116, 141, respectively.
+- The mean of each cluster has shown below.
+- Each vector aims to partition n observations into k clusters in which each observation belongs to the cluster with the nearest mean.
+```{r}
+set.seed(1234)
+pen2_kmeans <- kmeans(pen2, centers = 3) # perform k-means clustering on a data matrix
+pen2_kmeans
+```
+
+c. Look at the result object with `summary()`, `names()`, and `str()`.
+-  The `summary()` shows the elements in `pen2_kmeans`.
+```{r}
+summary(pen2_kmeans)
+```
+We also can found the attributes by using `names()`.
+
+- `cluster`: A vector of integers (from 1:k) indicating the cluster to which each point is allocated.
+- `centers`: A matrix of cluster centers
+- `totss`: The total sum of squares.
+- `withinss`: Vector of within-cluster sum of squares, one component per cluster.
+- `tot.withinss`: Total within-cluster sum of squares, i.e.`sum(withinss)`.
+- `betweenss`: The between-cluster sum of squares, i.e.`totss-tot.withinss`.
+- `size`: The number of points in each cluster (observations).
+- `iter`: The number of (outer) iterations.
+- `ifault`: integer: indicator of a possible algorithm problem -- for experts.
+```{r}
+names(pen2_kmeans) # between within sum of square
+```
+
+For example, I want to see how many iterations in `pen2_kmeans`, I will carry out:
+```{r}
+pen2_kmeans$iter
+```
+
+`str()` displays the specific structure of an object.
+```{r}
+str(pen2_kmeans)
+```
+
+d. Use `augment()`, `glance()` and `tidy()` to extract information from the model
+- `tidy()` generates a readable output.
+```{r}
+tidy(pen2_kmeans)
+```
+`glance()` shows the simple over view of the model.
+```{r}
+glance(pen2_kmeans)
+```
+`augment()` saves the results in the existing data set, automatically generating a new column.
+```{r}
+augment(pen2_kmeans, data = pen2)
+```
+Or we can select more variables from the original data and attach the results as a new data set.
+```{r}
+penguins %>%
+  select(species, island, year, bill_length_mm, bill_depth_mm) %>%
+  drop_na() -> new_penguins
+augment(pen2_kmeans, data = new_penguins) -> new_clusters
+head(new_clusters)
+```
+
+e. Plot the clusters with your package of choice
+
+Showing 3 clusters in a scatterplot
+```{r}
+new_clusters %>%
+  ggplot(aes(bill_length_mm, bill_depth_mm, color = .cluster)) +
+  geom_point() +
+  theme_bw()
+```
+
+Fix the x- and y-axes and enlarge the data points of cluster means.
+```{r}
+new_clusters %>%
+  ggplot(aes(bill_length_mm, bill_depth_mm, color = .cluster)) +
+  geom_point() +
+  geom_point(aes(color = cluster), size = 10, data = tidy(pen2_kmeans)) +
+  coord_fixed()
+```
+
+Add a `species` variable to legend.
+```{r}
+new_clusters %>% 
+  ggplot(aes(bill_length_mm, bill_depth_mm, color = species)) +
+  geom_point() +
+  theme_dark()
+```
+
+Count species vs cluster sampling 
+```{r}
+new_clusters %>%
+  count(.cluster, species) %>%
+  ggplot(aes(.cluster, species, size = n)) +
+  geom_point() +
+  ggtitle("Species vs Cluster")
+```
+# 5 Clusters
+
+f. Return The previous steps with more variables and different values of $K$
+
+**Perform k-means using 5 clusters**: We now add two more variables `flipper_length_mm` and `body_mass_g` to the matrix, and save it as `pen3`.
+```{r}
+pen3 <- penguins %>%
+  select(bill_length_mm, bill_depth_mm, flipper_length_mm, body_mass_g) %>%
+  drop_na() %>%
+  scale() %>% # will calculate the mean and standard deviation of the entire vector
+  as.matrix()
+head(pen3)
+```
+
+
+```{r}
+set.seed(1)
+pen3_kmeans <- kmeans(pen3, centers = 5) # perform k-means clustering on a data matrix
+pen3_kmeans
+```
+
+Result of 5 Clusters with 4 variables.
+```{r}
+tidy(pen3_kmeans)
+```
+Data visualzation
+```{r}
+penguins %>%
+  select(species:body_mass_g) %>%
+  drop_na() -> tmp
+augment(pen3_kmeans, tmp) %>%
+  ggplot(aes(bill_length_mm, bill_depth_mm, color = body_mass_g, size = flipper_length_mm)) +
+  geom_point() +
+  theme_bw() +
+  facet_wrap(~.cluster)
+```
+
+# Elbow Chart
+g. Construct an Elbow Chart to find an appropriate number of clusters for the data set
+- We need to visualize the total within-cluster sum of squares with each k
+- According to the Elbow Chart, we can say the roughly appropriate number of clusters is k = 2.
+```{r}
+tibble(k = 1:10) %>%
+  mutate(models = map(k, ~kmeans(pen3, centers = .x))) %>% #.x = k %>%
+  mutate(tot.withinss = map_dbl(models, "tot.withinss")) -> many_kmenas_res
+```
+
+Plotting
+```{r}
+many_kmenas_res %>%
+  ggplot(aes(k, tot.withinss)) +
+  geom_point() +
+  geom_line() + 
+  theme_bw() +
+  ggtitle("Total within-cluster sum of squares vs K") +
+  geom_vline(xintercept = 2, color = "red") +
+  geom_text(x = 4, y = 800, label = "Elbow Point, K = 2", 
+            size = 6, colour = "red")
+```
+
+# References
+- https://en.wikipedia.org/wiki/K-means_clustering
+- https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/kmeans
+- https://stackoverflow.com/questions/20256028/understanding-scale-in-r
