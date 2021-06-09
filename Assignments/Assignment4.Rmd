@@ -29,11 +29,17 @@ In this assignment, I will be using [Tidymodels](https://www.tidymodels.org/) in
 
 Explain the assumptions we are making when performing Principle Component Analysis (PCA). What happens when these assumptions are violated?
 
+## The assumptions of PCA
+1. Linearity: The data set is assumed to be linear combinations of the variables.
+
+2. 
+
 # Exercise 2 (10 points)
 
 Answer the following questions regarding Principle Component Analysis.
 
 - Is it important to standardize before applying PCA?
+
 - Should one remove highly correlated variables before doing PCA?
 - What will happen when eigenvalues are roughly equal?
 - Can PCA be used to reduce the dimensionality of a highly nonlinear data set?
@@ -43,7 +49,6 @@ Answer the following questions regarding Principle Component Analysis.
 You will in this exercise explore a data set using PCA. The data comes from the [#tidytuesday project](https://github.com/rfordatascience/tidytuesday) and is about [Student Loan Payments](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-11-26).
 
 Load in the data using the following script.
-
 ```{r, eval=FALSE}
 library(tidymodels)
 loans <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-11-26/loans.csv") %>%
