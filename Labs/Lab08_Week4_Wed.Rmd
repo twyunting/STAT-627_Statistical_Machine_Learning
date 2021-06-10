@@ -1,5 +1,5 @@
 ---
-title: "Lab 8"
+title: "Shrinkage and Hyperparameter Tuning"
 author: "Yunting Chiu"
 date: "`r Sys.Date()`"
 output:
@@ -9,19 +9,145 @@ output:
 ```{r setup, include=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-This week we will talk about shrinkage and hyperparameter tuning.
+This week we will talk about **shrinkage** and **hyperparameter** tuning.
 
 We will use the `Hitters` data set from the `ISLR` library. It can be loaded using the following code
 
-```{r}
+The vast majority of variables are numerical, with the remainder being factors.
+```{r, message=FALSE}
+library(tidyverse)
+library(tidymodels)
 library(ISLR)
 data("Hitters")
+Hitters %>%
+  str()
 ```
 
 Remove all rows where the salary is `NA` and split the data into testing and training data sets.
+```{r}
+Hitters %>%
+  filter(!is.na(Salary)) -> Hitters_narm
 
-a. Use `linear_reg()` with  `mixture = 0` to specify a ridge regression model.
+set.seed(1234)
+Hitters_split <- initial_split(Hitters_narm)
+Hitters_train <- training(Hitters_split)
+Hitter_test <- testing(Hitters_split)
+```
+
+a. Use `linear_reg()` with  `mixture = 0` to specify a **ridge regression model**.
+
+- `mixture = 0` is L1 regularization. That is, ridge.
+- `mixture = 1` is L1 regularization. That is, lasso.
+
+Let's set the `penalty` to `0` to see what happens.
+```{r}
+ridge_spec0 <- linear_reg(mixture = 0, penalty = 0) %>%
+  set_mode("regression") %>%
+  set_engine("glmnet")
+
+ridge_spec0
+```
+
+Put in our ingredients and get a recipe. 
+```{r}
+ridge_rec <- recipe(Salary ~ ., data = Hitters_train) %>%
+  step_novel(all_nominal_predictors()) %>% # Novel Factor Levels
+  step_dummy(all_nominal_predictors()) %>%
+  step_zv(all_predictors()) %>% # remove variables that contain only a single value
+  step_normalize(all_predictors()) # Normalization usually means to scale a variable to have values between 0 and 1
+
+ridge_rec
+```
+
 b. Fit the model on the data and inspect the model. What do you see?
+```{r}
+ridge_wf0 <- workflow() %>%
+  add_model(ridge_spec0) %>%
+  add_recipe(ridge_rec)
+```
+
+```{r}
+ridge_fit0 <- fit(ridge_wf0, data = Hitters_train)
+```
+
+```{r}
+augment(ridge_fit0, new_data = Hitter_test) %>%
+  rmse(truth = Salary, estimate = .pred)
+```
+```{r}
+augment(ridge_fit0, new_data = Hitter_test) %>%
+  ggplot(aes(Salary, .pred)) +
+  geom_abline(slope = 1, intercept = 0) +
+  geom_point()
+```
+
 c. Try to predict using this model. What are your output?
 d. Use {tune} to setup hyperparameter tuning to determine the right amount of regularization.
+```{r}
+ridge_spec <- linear_reg(mixture = 0, penalty = tune()) %>%
+  set_mode("regression") %>%
+  set_engine("glmnet")
+```
+
+```{r}
+ridge_wf <- workflow() %>%
+  add_model(ridge_spec) %>%
+  add_recipe(ridge_rec)
+```
+
+```{r}
+set.seed(1234)
+Hitters_fold <- vfold_cv(Hitters_train)
+# random, 
+# penalty_grid <- grid_regular(list(p1 = threshold(), p2 = threshold()), levels = 10, size = 100)
+# grid_max_entropy()
+penalty_grid <- grid_regular(penalty(range = c(0, 5)), levels = 50)
+penalty_grid 
+#penalty_grid %>%
+  #ggplot(aes(p1, p2)) +
+  # geom_point()
+```
+```{r}
+penalty()
+```
+
+
+```{r}
+tune_res <- tune_grid(
+  object = ridge_wf, 
+  resamples = Hitters_fold,
+  grid = penalty_grid,
+ control = control_grid(verbose = TRUE) # fitting model one by one
+)
+tune_res 
+```
+
+```{r}
+tune_res %>%
+  collect_metrics()
+```
+
+```{r}
+tune_res %>%
+  show_best("rmse")
+```
+```{r}
+tune_res %>%
+  autoplot()
+```
+```{r}
+best_rmse <- select_best(tune_res, metric = "rmse")
+best_rmse
+```
+```{r}
+ridge_final <- finalize_workflow(ridge_wf, best_rmse)
+ridge_final
+```
+```{r}
+ridge_final_fit <- fit(ridge_final, data = Hitters_train) 
+```
+
 e. Fit the best model. How does your parameter estimates look like?
+
+# References
+- https://www.tmwr.org/recipes.html

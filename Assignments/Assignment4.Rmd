@@ -32,7 +32,11 @@ Explain the assumptions we are making when performing Principle Component Analys
 ## The assumptions of PCA
 1. Linearity: The data set is assumed to be linear combinations of the variables.
 
-2. 
+2. Interval-level measurement: All variables should be assessed on an interval or ratio level of measurement.
+
+3. Random sampling: 
+
+Unlike factor analysis, PCA assumes that there is no unique variance and that total variance equals common variance.
 
 # Exercise 2 (10 points)
 
@@ -41,6 +45,7 @@ Answer the following questions regarding Principle Component Analysis.
 - Is it important to standardize before applying PCA?
 
 - Should one remove highly correlated variables before doing PCA?
+
 - What will happen when eigenvalues are roughly equal?
 - Can PCA be used to reduce the dimensionality of a highly nonlinear data set?
 
@@ -49,8 +54,7 @@ Answer the following questions regarding Principle Component Analysis.
 You will in this exercise explore a data set using PCA. The data comes from the [#tidytuesday project](https://github.com/rfordatascience/tidytuesday) and is about [Student Loan Payments](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-11-26).
 
 Load in the data using the following script.
-```{r, eval=FALSE}
-library(tidymodels)
+```{r}
 loans <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-11-26/loans.csv") %>%
   select(-agency_name, -added) %>%
   drop_na()
@@ -58,22 +62,130 @@ loans <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidy
 
 a.  Use the `prcomp()` function to perform PCA on the loans data set. Set `scale. = TRUE` to perform scaling. What results are contained in this object? (hint: use the `names()` function)
 
-b. Calculate the amount of variance explained by each principal component. (hint: look at `?broom:::tidy.prcomp`)
+`loans` data set has the following variables
+```{r}
+names(loans)
+```
 
-c. Use the `tidy()` function to extract the loadings. Which variable contributed most to the first principle component? Second Component?
+Make sure we need to remove all non-numeric columns in advance. Sure, we can go ahead.
+```{r}
+str(loans)
+```
+
+Performing PCA on the `loans` data set
+```{r}
+loans_pca <- prcomp(~., data = loans, scale. = TRUE) 
+loans_pca
+```
+
+
+b. Calculate the amount of variance explained by each principal component. (hint: look at `?broom::tidy.prcomp`)
+
+Standard deviation = square root of the variance, so the variance by each principal component will be:
+```{r}
+loans_pca %>%
+  tidy(matrix = "pcs") %>%
+  mutate(Variance = (std.dev)^2) %>%
+  select(PC, Variance)
+```
+
+c. Use the `tidy()` function to extract the **loadings**. Which variable contributed most to the first principle component? Second Component?
+
+- `starting` contributes the most in PC1.
+- `quarter` contributes the most in PC2.
+```{r}
+loans_pca %>%
+  tidy(matrix = "loadings") %>%
+  filter(PC == 1 | PC == 2) %>%
+  ggplot(aes(value, column)) +
+  geom_col() +
+  facet_wrap(~PC) +
+  theme_bw()
+```
+
 
 d. Use the `augment()` function to get back the transformation and create a scatter plot of any two components of your choice.
+
+The fitted PC1 and PC2 coordinates for each quarter of the year are shown below.
+```{r}
+augment(loans_pca, newdata = loans) %>%
+  ggplot(aes(x = .fittedPC1, y = .fittedPC2, color = factor(quarter))) +
+  geom_point() +
+  theme_bw() +
+  labs(color = "Quarter") 
+```
+
 
 # Exercise 4 (15 points)
 
 In this exercise, you are tasked to predict the weight of an animal in a zoo, based on which words are used to describe it. The `animals` data set can be downloaded [here](data/animals.csv).
 
+Read the data set. We can see there are 801 variables with 479 observations!!!
+```{r}
+animals <- read_csv("./data/animals.csv")
+dim(animals)
+# str(animals) # all variables are numerical
+```
+
 This data set contains 801 variables. The first variable `weight` is the natural log of the mean weight of the animal. The remaining variables are named `tf_*` which shows how many times the word `*` appears in the description of the animal.
 
-Use {tidymodels} to set up a workflow to train a PC regression. We can do this by specifying a linear regression model, and create a preprocessor recipe with {recipes} that applies PCA transformation on the predictors using `step_pca()`. Use the `threshold` argument in `step_pca()` to only keep the principal components that explain 90% of the variance.
+Use {tidymodels} to set up a workflow to train a PC regression. We can do this by specifying a **linear regression model**, and create a preprocessor recipe with {recipes} that applies PCA transformation on the predictors using `step_pca()`. Use the `threshold` argument in `step_pca()` to only keep the principal components that explain 90% of the variance.
+
+Setting a seed and splitting the data to the training and testing sets
+```{r}
+set.seed(1234)
+animals_split <- initial_split(animals, strata = "weight")
+animals_train <- training(animals_split)
+animals_test <- testing(animals_split)
+```
+
+Customize a recipe for the question
+```{r, message=FALSE, warning=FALSE}
+rec_spec <- recipe(weight ~., data = animals_train) %>%
+  step_normalize(all_predictors()) %>%
+  step_pca(all_predictors(), threshold = 0.9)
+rec_spec 
+```
+
+Construct a linear regression specification
+```{r}
+lm_spec <- linear_reg() %>%
+  set_mode("regression") %>%
+  set_engine("lm")
+lm_spec
+```
+
+Construct the model workflow
+```{r}
+pcr_wf <- workflow() %>%
+  add_recipe(rec_spec) %>%
+  add_model(lm_spec)
+pcr_wf
+```
+
+Fit the model
+```{r}
+pcr_fit <- fit(pcr_wf, data = animals_train)
+```
+
 
 How well does this model perform on the testing data set?
 
+Lower value of RMSE indicates a better fit. In the initial stage, we want to keep the principal components that explain 90% of the variance so we set `threshold = 0.9` in `step_pca()`. The algorithm will generate enough components to capture 90 % of the variability in the variables. Because we have 90% variables, the rmse will be small when compared to `threshold = 0.1`. 
+```{r}
+augment(pcr_fit, new_data = animals_test) %>%
+  rmse(truth = weight, estimate = .pred) # root mean squared error
+```
+
+Because Principal Component Analysis is a linear method, the blue line can help us read the plot more easily. As of now, the animals data set contains 800 predictors, and PCR is effective at reducing the dimensionality of large data sets. The model has a good fit because the majority of the fitted values are between -5 and 5.
+```{r}
+augment(pcr_fit, new_data = animals_test) %>%
+  ggplot(aes(weight, .pred)) +
+  geom_point() +
+  geom_abline(slope = 1, intercept = 0, color = "blue") +
+  coord_fixed() +
+  theme_bw()
+```
 
 # Exercise 5 (10 points)
 
@@ -124,3 +236,8 @@ How well does this model perform on the testing data set?
 # References
 - https://towardsdatascience.com/regularization-in-machine-learning-76441ddcf99a
 - https://towardsdatascience.com/cross-validation-in-machine-learning-72924a69872f
+- https://stats.idre.ucla.edu/spss/seminars/efa-spss/
+- https://clauswilke.com/blog/2020/09/07/pca-tidyverse-style/
+- https://medium.com/analytics-vidhya/principal-component-analysis-too-many-variables-here-73dddec6b53d
+
+
