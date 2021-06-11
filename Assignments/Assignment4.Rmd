@@ -17,10 +17,7 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(tidymodels)
-library(corrplot)
 library(ggthemes)
-library(discrim)
-library(leaps)
 ```
 
 In this assignment, I will be using [Tidymodels](https://www.tidymodels.org/) instead of base R.
@@ -122,7 +119,8 @@ In this exercise, you are tasked to predict the weight of an animal in a zoo, ba
 
 Read the data set. We can see there are 801 variables with 479 observations!!!
 ```{r}
-animals <- read_csv("./data/animals.csv")
+animals <- read_csv("./data/animals.csv") %>%
+  filter(!is.na(weight))
 dim(animals)
 # str(animals) # all variables are numerical
 ```
@@ -177,7 +175,7 @@ augment(pcr_fit, new_data = animals_test) %>%
   rmse(truth = weight, estimate = .pred) # root mean squared error
 ```
 
-Because Principal Component Analysis is a linear method, the blue line can help us read the plot more easily. As of now, the animals data set contains 800 predictors, and PCR is effective at reducing the dimensionality of large data sets. The model has a good fit because the majority of the fitted values are between -5 and 5.
+Because Principal Component Analysis is a linear method, the blue line can help us read the plot more easily. As of now, the `animals` data set contains 800 predictors, and PCR is effective at reducing the dimensionality of large data sets. The model has a good fit because the majority of the fitted values are between -5 and 5.
 ```{r}
 augment(pcr_fit, new_data = animals_test) %>%
   ggplot(aes(weight, .pred)) +
@@ -192,18 +190,30 @@ augment(pcr_fit, new_data = animals_test) %>%
 For part (a) through (c) indicate which of the statements are correct. Justify your answers.
 
 a. The lasso, relative to least squares, is:
-    - More flexible and hence will give improved prediction accuracy when its increase in bias is less than its decrease in variance.
-    - More flexible and hence will give improved prediction accuracy when its increase in variance is less than its decrease in bias.
-    - Less flexible and hence will give improved prediction accuracy when its increase in bias is less than its decrease in variance.
-    - Less flexible and hence will give improved prediction accuracy when its increase in variance is less than its decrease in bias.
-b. Repeat (a) for ridge regression relative to least squares.
-c. Repeat (a) for non-linear methods relative to least squares.
+    1. More flexible and hence will give improved prediction accuracy when its increase in bias is less than its decrease in variance.
+    2. More flexible and hence will give improved prediction accuracy when its increase in variance is less than its decrease in bias.
+    3. Less flexible and hence will give improved prediction accuracy when its increase in bias is less than its decrease in variance.
+    4. Less flexible and hence will give improved prediction accuracy when its increase in variance is less than its decrease in bias.
     
+## The lasso (L1 Regularization), relative to least squares is
+
+**3** is correct. Compared to least squares models, the lasso is a restrictive model. Lasso regression can shrunk coefficients to 0 exactly (unless $\lambda = \infty$). In comparison to least squares, it penalizes the coefficients of non-essential variables to produce a model with a lower variance and higher bias.
+
+## The ridge (L2 Regularization), relative to least squares is
+
+b. Repeat (a) for ridge regression relative to least squares.
+
+**3** is correct. Because coefficients tend towards zero, variance decreases and bias increases, causing ridge regression less flexible than least squares regression. As the coefficient estimates shrink, we can obtain a relatively better MSE in ridge regression. The least squares coefficient results in a larger variance value. Ridge regression, on the other hand, can still perform well by trading off a increase in bias and reduce in variance.
+
+## The non-linear methods, relative to least squares is
+
+c. Repeat (a) for non-linear methods relative to least squares.
+
+**2** is correct. Non-linear models have more flexibility and less bias than least squares models. Non-linear models perform better when the linearity assumption is violated. Due to Non-linear models more sensitive fits to the underlying data, these approaches will have higher variation and will require a substantial reduction in bias to work well.
 
 # Exercise 6 (10 points)
 
 Suppose we estimate the regression coefficients in a linear regression model by minimizing
-
 $$
 \sum_{i=1}^n \left( y_i - \beta_0 - \sum^p_{j=1}\beta_j x_{ij} \right)^2 + \lambda \sum_{j=1}^p \beta_j^2
 $$
@@ -227,11 +237,119 @@ In this exercise, you are tasked to predict the weight of an animal in a zoo, ba
 
 This data set contains 801 variables. The first variable `weight` is the natural log of the mean weight of the animal. The remaining variables are named `tf_*` which shows how many times the word `*` appears in the description of the animal.
 
-Fit a lasso regression model to predict `weight` based on all the other variables.
+(a) Fit a **lasso regression model** to predict `weight` based on all the other variables.
 
-Use the **tune** package to perform hyperparameter tuning to select the best value of $\lambda$. Use 10 bootstraps as the `resamples` data set.
+(b) Use the **tune** package to perform hyperparameter tuning to select the best value of $\lambda$. Use 10 bootstraps as the `resamples` data set.
 
-How well does this model perform on the testing data set?
+(c) How well does this model perform on the testing data set?
+
+## Lasso Regression
+
+Recap the data set
+```{r}
+animals %>%
+  head()
+```
+
+`mixture = 1` indicates that it is a lasso model.
+```{r}
+# engine specification
+lasso_spec <- linear_reg(mixture = 1, penalty = tune()) %>%
+  set_mode("regression") %>%
+  set_engine("glmnet")
+```
+
+Put in our ingredients and get a recipe. Because ridge regression is scale sensitive, we must ensure that the variables are on the same scale by using `step_normalize(all_predictors())`.
+```{r, message=FALSE}
+# customize a recipe
+lasso_rec <- recipe(weight ~., data = animals_train) %>%
+  step_normalize(all_predictors()) %>%
+  step_zv(all_predictors()) 
+```
+
+## Workflow
+```{r}
+lasso_wf <- workflow() %>%
+  add_model(lasso_spec) %>%
+  add_recipe(lasso_rec)
+```
+
+Create a bootstrap term in order to use in the following `tune_grid()` session. We use 10 bootstraps.
+```{r}
+set.seed(4321)
+animals_boots <- bootstraps(animals_train, strata = weight, time = 10)
+animals_boots$splits
+```
+
+Regularly predict the penalty 50 times using regular grids, with the penalty range limited to $10^{-5}$ to $0$. Note, these are in transformed units, the default transformation is $log10$.
+```{r}
+penalty_grid <- grid_regular(penalty(range = c(-5, 0)), levels = 50)
+```
+
+## Tune
+```{r, warning=FALSE}
+tune_res <- tune_grid(object = lasso_wf, resamples = animals_boots,
+                      grid = penalty_grid)
+tune_res
+```
+
+Display the each penalty on rmse and rsq, respectively.
+```{r}
+tune_res %>%
+  collect_metrics()
+```
+Display the best five rmse value of penalty
+```{r}
+tune_res %>%
+  show_best(metric = "rmse")
+```
+
+We can see that if the amount of regularization is close to 0.25, the rmse is low and the rsq is high, on average. Thus, the best hyperparameter of this model should be here.
+```{r}
+tune_res %>%
+  autoplot() +
+  geom_vline(xintercept = 0.2442053, color = "red") 
+```
+
+## Best Hyperparameter
+
+The best value of $\lambda$ is 0.244.
+```{r}
+best_rmse <- select_best(tune_res, metric = "rmse")
+best_rmse
+```
+
+```{r}
+lasso_final <- finalize_workflow(lasso_wf, best_rmse)
+```
+
+```{r}
+lasso_final_fit <- fit(lasso_final, data = animals_train) 
+```
+
+## Peformance
+
+Fit a lasso regression model to predict weight based on all the other variables. With the rmse value, we can conclude that the model performs mediocrity. However, we can carry out additional comparisons, such as canceling the penalty term in the model, to determine whether the good performance is due to hyperparameters or the model itself.
+```{r}
+augment(lasso_final_fit, new_data = animals_test) %>%
+  rmse(truth = weight, estimate = .pred)
+```
+## Visualization
+
+```{r}
+augment(lasso_final_fit, new_data = animals_test) %>%
+  ggplot(aes(weight, .pred)) +
+  geom_abline(slope = 1, intercept = 0) +
+  geom_point() +
+  theme_bw()
+```
+
+The `weight` range is from -8.111728 to 10.491274, and based on the plot above, we can conclude that the model does not work well; tuning $\lambda$ appears to have no obvious benefit in the model.
+```{r}
+animals %>%
+  select(weight) %>%
+  range()
+```
 
 # References
 - https://towardsdatascience.com/regularization-in-machine-learning-76441ddcf99a
@@ -239,5 +357,6 @@ How well does this model perform on the testing data set?
 - https://stats.idre.ucla.edu/spss/seminars/efa-spss/
 - https://clauswilke.com/blog/2020/09/07/pca-tidyverse-style/
 - https://medium.com/analytics-vidhya/principal-component-analysis-too-many-variables-here-73dddec6b53d
+
 
 

@@ -235,9 +235,7 @@ Suppose that we use some statistical learning method to make a prediction for th
 
 a.  Carefully describe how we might estimate the standard deviation of our prediction.
 
-The Bootstrap method is suitable for estimating the standard deviation of our prediction. Rather than acquiring new independent data sets from the population and fitting our model to them, we acquire repeated random samples from the original data set. To be precise, we sample with replacement $n$ times and then use the following equation to determine the associated estimates and standard deviation of those $n$. 
-
-![](pics/hw3.1.png)
+Bootstrap can be used to quantify the variability of most techniques. Even unsupervised techniques.
 
 b.  Is this procedure depends on what statistical learning method we are using?
 
