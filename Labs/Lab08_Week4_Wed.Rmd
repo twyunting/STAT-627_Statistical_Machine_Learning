@@ -71,6 +71,8 @@ ridge_wf0 <- workflow() %>%
 
 ```{r}
 ridge_fit0 <- fit(ridge_wf0, data = Hitters_train)
+
+ridge_fit0 %>% tidy()
 ```
 
 c. Try to predict using this model. What are your output?
@@ -172,12 +174,15 @@ ridge_final <- finalize_workflow(ridge_wf, best_rmse)
 ```
 
 ```{r}
-ridge_final_fit <- fit(ridge_final, data = Hitters_train) 
+ridge_final_fit <- fit(ridge_final, data = Hitters_train)
+
+ridge_fit0 %>% summary()
+ridge_final_fit %>% tidy()
 ```
 
 When we tuned the hyperparameter in the model, the rmse does not show a obvious reduction when compared to the `penalty = 0`'s rmse: 228. This means that tuning the hyperparameter will not work in this model.
 ```{r}
-augment(ridge_final_fit, new_data = Hitters_test) %>%
+augment(ridge_final_fit, new_data = Hitters_test)
   rmse(truth = Salary, estimate = .pred)
 ```
 
@@ -188,6 +193,19 @@ augment(ridge_final_fit, new_data = Hitters_test) %>%
   geom_abline(slope = 1, intercept = 0) +
   geom_point() +
   theme_bw()
+```
+
+# Comapre Residual
+
+Compare $\lambda$ = 0 to $\lambda$ = 422.9243's RSS. 
+```{r}
+augment(ridge_final_fit, new_data = Hitters_test) %>%
+  mutate(RSS = (Salary-.pred)^2) %>%
+  select(RSS)
+
+augment(ridge_fit0, new_data = Hitters_test) %>%
+  mutate(RSS = (Salary-.pred)^2) %>%
+  select(RSS)
 ```
 
 # References

@@ -20,20 +20,17 @@ library(tidymodels)
 library(ggthemes)
 ```
 
-In this assignment, I will be using [Tidymodels](https://www.tidymodels.org/) instead of base R.
+In this assignment, I will be using [Tidymodels](https://www.tidymodels.org/) framework instead of base R.
 
 # Exercise 1 (10 points)
 
 Explain the assumptions we are making when performing Principle Component Analysis (PCA). What happens when these assumptions are violated?
 
-## The assumptions of PCA
-1. Linearity: The data set is assumed to be linear combinations of the variables.
-
-2. Interval-level measurement: All variables should be assessed on an interval or ratio level of measurement.
-
-3. Random sampling: 
-
-Unlike factor analysis, PCA assumes that there is no unique variance and that total variance equals common variance.
+- *Sampling adequacy*: Large enough sample data are required to perform PCA. Otherwise, PCA can’t be correctly performed.
+- *Data type*: Only continuous variables and some ordinal variables are suitable for PCA. If a variable is categorical and does not have proper ordinal variables, PCA can’t work.
+- *Linearity*: It is assumed that the relationship between variables are linearly related. If it is violated, PCA can’t find the best fitting components.
+- *No outliers*: PCA is sensitive to outliers. If there exist outliers, PCA may misjudge the components.
+- *Correlation*: There should be some correlation among the factors. If this is violated, the data set if not suitable for dimension reduction.
 
 # Exercise 2 (10 points)
 
@@ -41,10 +38,19 @@ Answer the following questions regarding Principle Component Analysis.
 
 - Is it important to standardize before applying PCA?
 
+Ans: Yes. One assumption of PCA is that we assume that each of the variables in the data set has been centered to have mean zero so it is important to standardize the data set before applying PCA.
+
 - Should one remove highly correlated variables before doing PCA?
 
+Ans: No. Because PCA is an unsupervised learning technique, and it is for exploratory data analysis. There is no need to remove highly correlated variables. We only need to make sure that the new components are uncorrelated with the preceding components (e.g. $Z_2$ uncorrelated with $Z_1$).
+
 - What will happen when eigenvalues are roughly equal?
+
+Ans: The variances of the components are the eigenvalues. If eigenvalues are roughly equal, it means that the variances of the variables are roughly equal. In that case, the reduction of the data set via PCA into a smaller dimensional subspace might NOT be ideal since it is hard to distinguish “more informative” components (e.g. the variable that accounts for the most variation in the data set).
+
 - Can PCA be used to reduce the dimensionality of a highly nonlinear data set?
+
+Ans: PCA works better for linear data because one of its assumptions is that it assumes the data set to be linear combinations of the variables. However, some techniques can be applied for nonlinear PCA.
 
 # Exercise 3 (10 points)
 
@@ -69,12 +75,13 @@ Make sure we need to remove all non-numeric columns in advance. Sure, we can go 
 str(loans)
 ```
 
+## Principal Component Analysis
+
 Performing PCA on the `loans` data set
 ```{r}
 loans_pca <- prcomp(~., data = loans, scale. = TRUE) 
 loans_pca
 ```
-
 
 b. Calculate the amount of variance explained by each principal component. (hint: look at `?broom::tidy.prcomp`)
 
@@ -100,18 +107,17 @@ loans_pca %>%
   theme_bw()
 ```
 
-
 d. Use the `augment()` function to get back the transformation and create a scatter plot of any two components of your choice.
 
-The fitted PC1 and PC2 coordinates for each quarter of the year are shown below.
+The fitted PC1 against PC2 coordinates for each quarter of the year are shown below.
 ```{r}
 augment(loans_pca, newdata = loans) %>%
   ggplot(aes(x = .fittedPC1, y = .fittedPC2, color = factor(quarter))) +
   geom_point() +
   theme_bw() +
-  labs(color = "Quarter") 
+  labs(color = "Quarter") +
+  ggtitle("PC1 against PC2")
 ```
-
 
 # Exercise 4 (15 points)
 
@@ -161,6 +167,7 @@ pcr_wf <- workflow() %>%
 pcr_wf
 ```
 
+## Model Fitting
 Fit the model
 ```{r}
 pcr_fit <- fit(pcr_wf, data = animals_train)
@@ -175,7 +182,9 @@ augment(pcr_fit, new_data = animals_test) %>%
   rmse(truth = weight, estimate = .pred) # root mean squared error
 ```
 
-Because Principal Component Analysis is a linear method, the blue line can help us read the plot more easily. As of now, the `animals` data set contains 800 predictors, and PCR is effective at reducing the dimensionality of large data sets. The model has a good fit because the majority of the fitted values are between -5 and 5.
+## Visualization
+
+Because Principal Component Analysis is a linear method, the blue line can help us read the plot more easily. As of now, the `animals` data set contains 800 predictors, and PCR is effective at reducing the dimensionality of large data sets. However, the plot indicates the PCR model doesn't have a good fit. 
 ```{r}
 augment(pcr_fit, new_data = animals_test) %>%
   ggplot(aes(weight, .pred)) +
@@ -226,10 +235,24 @@ a. As we increase $\lambda$ from 0, the training RSS will:
     - Steadily increase.
     - Steadily decrease.
     - Remain constant.
+    
+As we increase $\lambda$ from 0, the impact of the shrinkage penalty grows, meaning that we want smaller and smaller ridge regression coefficients in order to achieve the objection of minimization. This puts more and more restrictions on the coefficients. Therefore the training RSS will steadily increase.
+
 b. Repeat (a) for test RSS.
+
+As we increase $\lambda$ from 0, the test RSS will decrease initially and increase following a U shape.
+
 c. Repeat (a) for variance.
+
+As we increase $\lambda$ from 0, for the same reason, the model is becoming less and less flexible, meaning that the coefficients are getting smaller and smaller. Therefore, the variance will steadily decrease.
+
 d. Repeat (a) for squared bias.
+
+As we increase $\lambda$ from 0, the impact of the shrinkage penalty grows, meaning that we are putting more and more restrictions on the coefficients. Therefore, there will be a steady increase in bias.
+
 e. Repeat (a) for the irreducible error.
+
+The irreducible error remains constant because by definition, the irreducible error is independent of the model, so it is independent of $\lambda$ as well.
 
 # Exercise 7 (15 points)
 
@@ -259,7 +282,7 @@ lasso_spec <- linear_reg(mixture = 1, penalty = tune()) %>%
   set_engine("glmnet")
 ```
 
-Put in our ingredients and get a recipe. Because ridge regression is scale sensitive, we must ensure that the variables are on the same scale by using `step_normalize(all_predictors())`.
+Put in our ingredients and get a recipe. Because lasso regression is scale sensitive, we must ensure that the variables are on the same scale by using `step_normalize(all_predictors())`.
 ```{r, message=FALSE}
 # customize a recipe
 lasso_rec <- recipe(weight ~., data = animals_train) %>%
@@ -298,10 +321,14 @@ Display the each penalty on rmse and rsq, respectively.
 tune_res %>%
   collect_metrics()
 ```
-Display the best five rmse value of penalty
+Display the best rmse and rsq values of penalty
 ```{r}
 tune_res %>%
-  show_best(metric = "rmse")
+  show_best(metric = "rsq") %>%
+  head(1)
+tune_res %>%
+  show_best(metric = "rmse") %>%
+  head(1)
 ```
 
 We can see that if the amount of regularization is close to 0.25, the rmse is low and the rsq is high, on average. Thus, the best hyperparameter of this model should be here.
@@ -341,10 +368,11 @@ augment(lasso_final_fit, new_data = animals_test) %>%
   ggplot(aes(weight, .pred)) +
   geom_abline(slope = 1, intercept = 0) +
   geom_point() +
-  theme_bw()
+  theme_bw() +
+  ggtitle("Lasso Prediction of Weight")
 ```
 
-The `weight` range is from -8.111728 to 10.491274, and based on the plot above, we can conclude that the model does not work well; tuning $\lambda$ appears to have no obvious benefit in the model.
+The `weight` range is from -8.111728 to 10.491274 from the original data set, and based on the plot above, we can conclude that the model does not work well; tuning $\lambda$ appears to have no obvious benefit in the model.
 ```{r}
 animals %>%
   select(weight) %>%
@@ -357,6 +385,7 @@ animals %>%
 - https://stats.idre.ucla.edu/spss/seminars/efa-spss/
 - https://clauswilke.com/blog/2020/09/07/pca-tidyverse-style/
 - https://medium.com/analytics-vidhya/principal-component-analysis-too-many-variables-here-73dddec6b53d
+- https://youtu.be/FgakZw6K1QQ
 
 
 
