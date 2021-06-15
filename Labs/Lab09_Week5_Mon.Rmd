@@ -1,0 +1,120 @@
+---
+title: "Lab9"
+author: "Yunting Chiu"
+date: "`r Sys.Date()`"
+output:
+  html_document: 
+    theme: journal
+    highlight: haddock
+---
+```{r setup, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+We will use the `ames` data set from the `modeldata` library. It can be loaded using the following code
+
+# Ames Housing Data
+```{r, message=FALSE}
+library(tidymodels)
+library(tidyverse)
+data("ames")
+ames
+```
+
+We will try to predict the `Sale_Price` of a house by the `Longitude` of its location (this would not be the best idea alone, but serves as an example). Use `step_bs()` to fit a spline onto `Longitude` use cross-validation to find the value of `degree` where the model performs best.
+
+# Data Visualization
+
+According to the true underlying relationship between `Longitude` and `Sale_Price` , The plot does not follow the linear trend.
+```{r}
+ggplot(ames, aes(Longitude, Sale_Price)) +
+  geom_point() +
+  theme_bw() +
+  geom_smooth(se = FALSE)
+```
+
+# The Best Order Polynomial Regression
+
+To begin with, we will split `ames` into training and testing sets.
+```{r}
+set.seed(1234)
+ames_split <- initial_split(ames)
+ames_train <- training(ames_split)
+ames_test  <- testing(ames_split)
+```
+
+Construct linear regression model specification, basis spline recipe, and basis spline workflow
+```{r}
+lm_spec <- linear_reg() %>%
+  set_mode("regression") %>%
+  set_engine("lm")
+
+rec_bs <- recipe(Sale_Price ~ Longitude, ames_train) %>%
+  step_bs(Longitude, degree = tune())
+
+wf_bs <- workflow() %>%
+  add_model(lm_spec) %>%
+  add_recipe(rec_bs)
+```
+
+create 10-Fold Cross-Validation in the training data set.
+```{r}
+set.seed(4321)
+ames_folds <- vfold_cv(ames_train)
+ames_folds
+```
+
+
+```{r}
+# param_gris <- grid_regular(degree_int(range = c(1, 5)), levels = 5)
+```
+
+Make a data frame with values ranging from 1 to 20. Later, we will piecewise fit the best multiple polynomials.
+```{r}
+param_grid <- tibble(degree = 1:20)
+param_grid
+```
+
+```{r, warning=FALSE}
+tune_res <- tune_grid(
+  object = wf_bs,
+  resamples = ames_folds,
+  grid = param_grid, control = control_grid(verbose = TRUE)
+)
+# tune_res$.notes[[1]]
+tune_res$.metrics[1] %>%
+  head()
+```
+
+Our goal is find the lowest value of rmse and the highest value of rsq. Look at the plot; if the polynomial degree is 8, the rmse performance will be the best. If the polynomial degree is 20, the rsq performance will be the best. 
+```{r}
+tune_res %>%
+  collect_metrics()
+autoplot(tune_res) +
+  geom_vline(xintercept = 8, color = "red") +
+  geom_vline(xintercept = 20, color = "blue") 
+```
+
+```{r}
+tune_res %>%
+  show_best(metric = "rmse")
+tune_res %>%
+  show_best(metric = "rsq")
+```
+
+We will take the best root mean squared error solution to fit the model. That is, the polynomial degree is 8.
+```{r}
+final_wf <- finalize_workflow(wf_bs, select_best(tune_res, metric = "rmse"))
+```
+
+```{r}
+final_fit <- fit(final_wf, data = ames_train)
+tidy(final_fit)
+```
+
+Next we will use `step_discretize()` and `step_cut()` to fit step function nto `Longitude` to see if that works better.
+
+```{r}
+?step_discretize()
+
+```
+

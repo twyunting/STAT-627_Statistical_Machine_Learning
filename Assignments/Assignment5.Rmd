@@ -1,0 +1,66 @@
+---
+title: "STAT-627 Assignment 5"
+author: "Yunting Chiu"
+date: "`r Sys.Date()`"
+output:
+  html_document: 
+    number_sections: yes
+    theme: cerulean
+    highlight: kate
+urlcolor: blue
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidymodels)
+library(ggthemes)
+```
+
+In this assignment, I will be using [Tidymodels](https://www.tidymodels.org/) framework instead of base R.
+
+# Exercise 1 (10 points)
+
+Suppose we fit a curve with basis functions $b_1(X) = X$, $B_2(X) = (X - 1)^2 I(X \geq 1)$. Note that $I(X \geq 1)$ equals 1 for $X \geq 1$ and 0 otherwise. We fit the linear regression  model
+
+$$Y = \beta_0 + \beta_1b_1(X) + \beta_2b_2(X) + \varepsilon$$
+
+and obtain the coefficient estimates $\hat \beta_0 = 1$, $\hat \beta_1 = 1$, $\hat \beta_2 = -2$. Sketch the estimated curve between $X = -2$ and $X = 2$. Note the intercepts, slopes and other relevant information.
+
+# Exercise 2 (10 points)
+
+Suppose we fit a curve with basis functions
+$b_1(X) = I(0 \leq X \leq 2) - (X-1)I(1 \leq X \leq 2)$, 
+$B_2(X) = (X - 3) I(3 \leq X \leq 4) + I(4 < X \leq 5)$. We fit the linear regression model
+
+$$Y = \beta_0 + \beta_1b_1(X) + \beta_2b_2(X) + \varepsilon$$
+
+and obtain the coefficient estimates $\hat \beta_0 = 1$, $\hat \beta_1 = 1$, $\hat \beta_2 = 3$. Sketch the estimated curve between $X = -2$ and $X = 2$. Note the intercepts, slopes and other relevant information.
+
+# Exercise 3 (10 points)
+
+Explain what happens to the bias/variance trade-off of our model estimates use regression splines.
+
+
+# Exercise 4 (10 points)
+
+Draw an example (of your own invention) of a partition of two-dimensional feature space that could result from recursive binary splitting. Your example should contain at least six regions. Draw a decision tree corresponding to this partition. Be sure to label all aspects of your figures, including regions $R_1, R_2, ...$, the cut points $t_1, t_2, ...$, and so forth.
+
+# Exercise 5 (10 points)
+
+Provide a detailed explanation of the algorithm that is used to fit a regression tree.
+
+# Exercise 6 (10 points)
+
+Explain the difference between bagging, boosting, and random forests.
+
+# Exercise 7 (20 points)
+
+You will be using the Boston data found [here](data/Boston.csv). The response is `medv` and the remaining variables are predictors.
+
+Do test-training split as usual, and fit a random forest model or boosted tree (your choice) and a linear regression model.
+
+The random forest or boosted tree model has a selection of hyper-parameters that you can tune to improve performance. Perform hyperparameter tuning using k-fold cross-validation to find a model with good predictive power. How does this model compare to the linear regression model?
