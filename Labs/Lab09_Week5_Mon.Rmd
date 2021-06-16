@@ -101,7 +101,7 @@ tune_res %>%
   show_best(metric = "rsq")
 ```
 
-We will take the best root mean squared error solution to fit the model. That is, the polynomial degree is 8.
+We will take the best root mean squared error solution to fit the model. That is, **the polynomial degree is 8**.
 ```{r}
 final_wf <- finalize_workflow(wf_bs, select_best(tune_res, metric = "rmse"))
 ```
@@ -111,7 +111,7 @@ final_fit <- fit(final_wf, data = ames_train)
 tidy(final_fit)
 ```
 
-Next we will use `step_discretize()` and `step_cut()` to fit step function nto `Longitude` to see if that works better.
+Next we will use `step_discretize()` and `step_cut()` to fit step function into `Longitude` to see if that works better.
 
 ```{r}
 ?step_discretize()
