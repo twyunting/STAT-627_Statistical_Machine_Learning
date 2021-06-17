@@ -1,23 +1,102 @@
 ---
-title: "Lab 10"
+title: "Decision Trees and Random Forests"
 author: "Yunting Chiu"
 date: "`r Sys.Date()`"
 output:
   html_document: 
-    theme: journal
+    theme: cerulean
     highlight: haddock
 ---
 ```{r setup, include=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 We will be using this lab to explore decision trees and random forests using the `palmerpenguins` package. We will also use a couple of other packages such as `rpart.plot`, `rpart`, `ranger`, and `vip`.
+```{r, message=FALSE}
+library(tidymodels)
+library(palmerpenguins)
+```
+# Split the Data
+```{r}
+penguins_split <- initial_split(penguins)
+set.seed(1234)
+penguins_train <- training(penguins_split)
+penguins_test <- testing(penguins_split)
+```
 
+# Decision Tree
 a. Fit a decision tree using `decision_tree()`, and visualize the structure of the tree.
+
+- The system can automatically generalize the model specification by clicking the **Addins** tab in the header of RStudio
+```{r}
+decision_tree_rpart_spec <-
+  decision_tree() %>%
+  set_engine('rpart') %>%
+  set_mode('classification')
+```
+
+```{r}
+dt_fit <- fit(decision_tree_rpart_spec, species ~., data = penguins_train)
+dt_fit
+```
+The first node is `flipper_length_mm`, 206 mm is the critical value in the first layer. The second nodes are `bill_length_mm` and `bill_depth_mm`, which are used to predict species.
+```{r, warning=FALSE}
+library(rpart.plot)
+rpart.plot(dt_fit$fit)
+```
 
 b. Try different values of the hyperparameters for the tree and see how the shape of the tree changes.
 
+The complexity parameter (cp) is used to control the size of the decision tree and to determine the best tree size. When we change cost complexity to 0.5, we can see that the plot now only has one node.
+```{r}
+decision_tree_rpart_spec_lambda <-
+  decision_tree(cost_complexity = 0.5) %>%
+  set_engine('rpart') %>%
+  set_mode('classification')
+dt_fit_lambda <- fit(decision_tree_rpart_spec_lambda, species ~., data = penguins_train)
+dt_fit_lambda
+rpart.plot(dt_fit_lambda$fit)
+```
+
+# Variable Importance Plots
+
 c. Use the `vip` package to showcase the variable importance.
+
+With respect to the `species` variable, the `vi()` and `vip()` show the important variables in descending order. We can see the first important variable is `flipper_length_mm`.
+```{r}
+library(vip)
+vi(dt_fit)
+vip(dt_fit)
+```
+
+# Random Forest Models
 
 d. Fit a random forest model using `rand_forest()`. What Do you see in the output?
 
+We set the importance as impurity in the model specification.
+```{r}
+rand_forest_ranger_spec <-
+  rand_forest() %>%
+  set_engine('ranger', importance = "impurity") %>%
+  set_mode('classification')
+rand_forest_ranger_spec
+```
+
+We can see the target node size is 10 in the algorithm.
+```{r}
+set.seed(4321)
+rf_fit <- fit(rand_forest_ranger_spec,species ~., data = penguins_train)
+rf_fit
+```
+
 e. Use the `vip` package to showcase the variable importance for the random forest.
+
+According to the results of the random forest model, we can now conclude that the most important variable is bill_length_mm, which has a large value greater than 50.
+```{r}
+vi(rf_fit$fit)
+vip(rf_fit$fit)
+```
+
+# Reference
+- https://stats.stackexchange.com/questions/179541/complexity-parameter-in-decision-tree
+
+
