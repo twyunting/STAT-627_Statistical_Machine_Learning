@@ -1,5 +1,5 @@
 ---
-title: "Lab9"
+title: "The Best Order Polynomial Regression"
 author: "Yunting Chiu"
 date: "`r Sys.Date()`"
 output:
@@ -32,8 +32,7 @@ ggplot(ames, aes(Longitude, Sale_Price)) +
   geom_smooth(se = FALSE)
 ```
 
-# The Best Order Polynomial Regression
-
+# step_bs()
 To begin with, we will split `ames` into training and testing sets.
 ```{r}
 set.seed(1234)
@@ -59,7 +58,7 @@ wf_bs <- workflow() %>%
 create 10-Fold Cross-Validation in the training data set.
 ```{r}
 set.seed(4321)
-ames_folds <- vfold_cv(ames_train)
+ames_folds <- vfold_cv(ames_train, strata = Sale_Price)
 ames_folds
 ```
 
@@ -68,9 +67,10 @@ ames_folds
 # param_gris <- grid_regular(degree_int(range = c(1, 5)), levels = 5)
 ```
 
-Make a data frame with values ranging from 1 to 20. Later, we will piecewise fit the best multiple polynomials.
+Make a data frame with values ranging from 1 to 10. Later, we will piecewise fit the best multiple polynomials.
 ```{r}
-param_grid <- tibble(degree = 1:20)
+param_grid <- tibble(degree = 1:10)
+#param_grid <- grid_regular(degree_int(range = c(1, 10)), levels = 20)
 param_grid
 ```
 
@@ -81,17 +81,14 @@ tune_res <- tune_grid(
   grid = param_grid, control = control_grid(verbose = TRUE)
 )
 # tune_res$.notes[[1]]
-tune_res$.metrics[1] %>%
-  head()
 ```
 
-Our goal is find the lowest value of rmse and the highest value of rsq. Look at the plot; if the polynomial degree is 8, the rmse performance will be the best. If the polynomial degree is 20, the rsq performance will be the best. 
+Our goal is find the lowest value of rmse and the highest value of rsq. Look at the plot; if the polynomial degree is 10, the rmse and rsqperformance will be the best. 
 ```{r}
 tune_res %>%
   collect_metrics()
 autoplot(tune_res) +
-  geom_vline(xintercept = 8, color = "red") +
-  geom_vline(xintercept = 20, color = "blue") 
+  geom_vline(xintercept = 10, color = "red") 
 ```
 
 ```{r}
@@ -101,20 +98,72 @@ tune_res %>%
   show_best(metric = "rsq")
 ```
 
-We will take the best root mean squared error solution to fit the model. That is, **the polynomial degree is 8**.
+We will take the best root mean squared error solution to fit the model. That is, **the polynomial degree is 10**.
 ```{r}
-final_wf <- finalize_workflow(wf_bs, select_best(tune_res, metric = "rmse"))
+final_wf_bs <- finalize_workflow(wf_bs, select_best(tune_res, metric = "rmse"))
 ```
 
 ```{r}
-final_fit <- fit(final_wf, data = ames_train)
-tidy(final_fit)
+final_fit_bs <- fit(final_wf_bs, data = ames_train)
+tidy(final_fit_bs)
 ```
+
+```{r}
+augment(final_fit_bs, new_data = ames_test) %>%
+  rmse(truth = Sale_Price, estimate = .pred) %>%
+  mutate(note = "bs model") -> bs_model
+bs_model
+```
+
 
 Next we will use `step_discretize()` and `step_cut()` to fit step function into `Longitude` to see if that works better.
 
+# step_discretize()
 ```{r}
-?step_discretize()
-
+rec_discretize <- recipe(Sale_Price ~ Longitude, ames_train) %>%
+  step_discretize(Longitude, degree = tune())
 ```
 
+```{r}
+wf_discretize <- workflow() %>%
+  add_model(lm_spec) %>%
+  add_recipe(rec_discretize)
+```
+
+```{r}
+tune_res2 <- tune_grid(
+  object = wf_discretize,
+  resamples = ames_folds,
+  grid = param_grid, control = control_grid(verbose = TRUE)
+)
+```
+
+```{r}
+tune_res2 %>%
+  collect_metrics()
+autoplot(tune_res) +
+  geom_vline(xintercept = 10, color = "red") 
+```
+
+```{r}
+tune_res2 %>%
+  show_best(metric = "rmse")
+tune_res2 %>%
+  show_best(metric = "rsq")
+```
+
+```{r}
+final_wf_bs <- finalize_workflow(wf_bs, select_best(tune_res, metric = "rmse"))
+```
+
+```{r}
+final_fit_bs <- fit(final_wf_bs, data = ames_train)
+tidy(final_fit_bs)
+```
+
+```{r}
+augment(final_fit_bs, new_data = ames_test) %>%
+  rmse(truth = Sale_Price, estimate = .pred) %>%
+  mutate(note = "bs model") -> bs_model
+bs_model
+```
