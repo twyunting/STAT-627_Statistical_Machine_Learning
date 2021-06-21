@@ -1,5 +1,5 @@
 ---
-title: "The Best Order Polynomial Regression"
+title: "Spline"
 author: "Yunting Chiu"
 date: "`r Sys.Date()`"
 output:
@@ -74,7 +74,7 @@ param_grid <- tibble(degree = 1:10)
 param_grid
 ```
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, message=FALSE}
 tune_res <- tune_grid(
   object = wf_bs,
   resamples = ames_folds,
@@ -83,7 +83,7 @@ tune_res <- tune_grid(
 # tune_res$.notes[[1]]
 ```
 
-Our goal is find the lowest value of rmse and the highest value of rsq. Look at the plot; if the polynomial degree is 10, the rmse and rsqperformance will be the best. 
+Our goal is find the lowest value of rmse and the highest value of rsq. Look at the plot; if the spline degree is 10, the rmse and rsq performance will be the best. 
 ```{r}
 tune_res %>%
   collect_metrics()
@@ -98,7 +98,7 @@ tune_res %>%
   show_best(metric = "rsq")
 ```
 
-We will take the best root mean squared error solution to fit the model. That is, **the polynomial degree is 10**.
+We will take the best root mean squared error solution to fit the model. That is, **the spline degree is 10**.
 ```{r}
 final_wf_bs <- finalize_workflow(wf_bs, select_best(tune_res, metric = "rmse"))
 ```
@@ -121,7 +121,7 @@ Next we will use `step_discretize()` and `step_cut()` to fit step function into 
 # step_discretize()
 ```{r}
 rec_discretize <- recipe(Sale_Price ~ Longitude, ames_train) %>%
-  step_discretize(Longitude, degree = tune())
+  step_discretize(Longitude, num_breaks = tune())
 ```
 
 ```{r}
@@ -131,18 +131,27 @@ wf_discretize <- workflow() %>%
 ```
 
 ```{r}
+param_grid2 <- tibble(num_breaks = 1:10)
+#param_grid <- grid_regular(degree_int(range = c(1, 10)), levels = 20)
+param_grid2
+```
+
+```{r, warning=FALSE, message=FALSE}
 tune_res2 <- tune_grid(
   object = wf_discretize,
   resamples = ames_folds,
-  grid = param_grid, control = control_grid(verbose = TRUE)
+  grid = param_grid2, control = control_grid(verbose = TRUE)
 )
+
+# tune_res2$.notes # Error: There should be at least 2 cuts
 ```
 
+We will take the best root mean squared error solution to fit the model. That is, **the spline degree is 8**.
 ```{r}
 tune_res2 %>%
   collect_metrics()
-autoplot(tune_res) +
-  geom_vline(xintercept = 10, color = "red") 
+autoplot(tune_res2) +
+  geom_vline(xintercept = 8, color = "red") 
 ```
 
 ```{r}
@@ -153,17 +162,55 @@ tune_res2 %>%
 ```
 
 ```{r}
-final_wf_bs <- finalize_workflow(wf_bs, select_best(tune_res, metric = "rmse"))
+final_wf_discretize <- finalize_workflow(wf_discretize, select_best(tune_res2, metric = "rmse"))
 ```
 
 ```{r}
-final_fit_bs <- fit(final_wf_bs, data = ames_train)
-tidy(final_fit_bs)
+final_fit_discretize <- fit(final_wf_discretize, data = ames_train)
+tidy(final_fit_discretize)
 ```
 
 ```{r}
-augment(final_fit_bs, new_data = ames_test) %>%
+augment(final_fit_discretize, new_data = ames_test) %>%
   rmse(truth = Sale_Price, estimate = .pred) %>%
-  mutate(note = "bs model") -> bs_model
-bs_model
+  mutate(note = "discretize model") -> discretize_model
+discretize_model
 ```
+
+# step_cut()
+
+Now, we can supply the breaks **manually**.
+```{r}
+rec_cut <- recipe(Sale_Price ~ Longitude, ames_train) %>%
+  step_cut(Longitude, breaks = c(-93.675, -93.650, -93.625))
+
+#ames_train %>%
+  #select(Longitude) %>%
+ # arrange(desc(Longitude)) %>%
+ # tail()
+```
+
+```{r}
+wf_cut <- workflow() %>%
+  add_model(lm_spec) %>%
+  add_recipe(rec_cut)
+```
+
+```{r}
+final_fit_cut <- fit(wf_cut, data = ames_train)
+tidy(final_fit_cut)
+```
+
+```{r}
+augment(final_fit_cut, new_data = ames_test) %>%
+  rmse(truth = Sale_Price, estimate = .pred) %>%
+  mutate(note = "cut model") -> cut_model
+cut_model
+```
+# Comparison
+
+The discretize model has the best performance in predicting `Sale_Price` based on `Longitude` because it has the smallest rmse.
+```{r}
+bind_rows(bs_model, discretize_model, cut_model)
+```
+

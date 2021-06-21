@@ -30,8 +30,8 @@ $$Y = \beta_0 + \beta_1b_1(X) + \beta_2b_2(X) + \varepsilon$$
 
 and obtain the coefficient estimates $\hat \beta_0 = 1$, $\hat \beta_1 = 1$, $\hat \beta_2 = -2$. Sketch the estimated curve between $X = -2$ and $X = 2$. Note the intercepts, slopes and other relevant information.
  
-- If $X < 1$, the estimated curve is $\hat{f}(X) = 1+ X$ . The intercept and slope are both 1.
-- If $X >= 1$, the estimated curve: $\hat{f}(X) = 1 + X-2(X - 1)^2$.
+- If $X < 1$, the estimated curve is $\hat{f} (X) = 1+ X$ . The intercept and slope are both 1.
+- If $X >= 1$, the estimated curve: $\hat{f} (X) = 1 + X-2(X - 1)^2$.
 ```{r}
 X <- seq(-2, 2, 0.01)
 Y <-  1 + X + -2 * (X - 1)^2 * (X >= 1)
@@ -88,6 +88,8 @@ Draw an example (of your own invention) of a partition of two-dimensional featur
 
 Provide a detailed explanation of the algorithm that is used to fit a regression tree.
 
+Decision trees are constructed via an algorithmic approach that identifies ways to split a data set based on different conditions. When the target values take discrete values (such as dummy variables), we call them classification trees and when the target values take continuous values, we call them regression trees. It consists of a series of splitting rules, starting at the top of the tree. The algorithm begins with the top split where it assigns observations into two branches (recursive binary splitting). The algorithm selects the split that minimizes the sum of the squared deviations from the mean in the two separate partitions. This splitting rule is then applied to each of the new branches. This process continues until each node reaches a user-specified minimum node size and becomes a terminal node.
+
 # Exercise 6 (10 points)
 
 Explain the difference between bagging, boosting, and random forests.
@@ -114,6 +116,7 @@ summary(Boston)
 ```
 
 Do test-training split as usual, and fit a random forest model or boosted tree (your choice) and a linear regression model.
+
 ## Split the Data
 ```{r}
 Boston_split <- initial_split(Boston)
@@ -178,7 +181,7 @@ rf_fit <- fit(rf_final, data = Boston_train)
 rf_fit
 ```
 
-## Evaluation
+## Random Forest Evaluation
 
 We can see from the small rmse that the fitted model is good. Furthermore, the plot shows that the vast majority of predicted `medv` values are very close to the observed values.
 ```{r}
@@ -212,7 +215,7 @@ lm_fit$fit %>%
   summary()
 ```
 
-# Evaluation
+# Linear Regression Model Evaluation
 
 The linear regression model's output is also not bad.
 ```{r}
