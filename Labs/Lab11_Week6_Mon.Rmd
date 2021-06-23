@@ -1,5 +1,5 @@
 ---
-title: "Lab 11"
+title: "SVM Models"
 author: "Yunting Chiu"
 date: "`r Sys.Date()`"
 output:
@@ -10,8 +10,11 @@ output:
 ```{r setup, include=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-In this lab, we will explore how to use SVM models. We will start by using the `Khan` data set from the **ISLR** package. 
+# Khan Gene Data
 
+SVM transforms our data using a technique known as the kernel trick, and then finds an optimal boundary between the possible outputs based on these transformations.
+
+In this lab, we will explore how to use SVM models. We will start by using the `Khan` data set from the **ISLR** package. 
 ```{r}
 library(ISLR)
 library(tidymodels)
@@ -19,6 +22,162 @@ Khan_train <- data.frame(x = Khan$xtrain, y = as.factor(Khan$ytrain))
 Khan_test <- data.frame(x = Khan$xtest, y = Khan$ytest)
 ```
 
+There are 63 observations and 2309 variables in `Khan_train`.
+```{r}
+dim(Khan_train)
+```
+
 We will fit a linear SVM on the training data set and predict the test data set. What do we expect the performance to be on the training and testing data set?
 
+```{r}
+svm_linear_spec <- svm_linear() %>%
+  set_engine("kernlab") %>%
+  set_mode("classification")
+```
+
+```{r}
+Khan_fit <- fit(svm_linear_spec, y ~., data = Khan_train)
+Khan_fit
+```
+
+Because we compare to the testing set, there is no error prediction.
+```{r}
+augment(Khan_fit, new_data = Khan_train) %>%
+  conf_mat(truth = y, estimate = .pred_class) %>%
+  autoplot(type = "heatmap")
+```
+
+We find a small difference in factor 3, but the overall SVM prediction is good.
+```{r, warning=FALSE}
+augment(Khan_fit, new_data = Khan_test) %>%
+  conf_mat(truth = y, estimate = .pred_class) %>%
+  autoplot(type = "heatmap")
+```
+
+# Sales of Child Car Seats Data
+
 Next, we will switch to the `Carseats` and try to predict whether a store is located in the US or not. We will tune some of the arguments to get a good fit.
+
+
+There is no NA value in the numerical variables.
+```{r}
+# Carseats
+# No missing data
+purrr::map_dbl(Carseats, ~sum(is.na(.x)))
+```
+
+```{r}
+set.seed(1234)
+Carseats_split <- initial_split(Carseats)
+Carseats_train <- training(Carseats_split)
+Carseats_test <- testing(Carseats_split)
+```
+
+## Recipe
+```{r}
+rec_spec <- recipe(US ~., data = Carseats_train) %>%
+  step_novel(all_nominal(), -all_outcomes()) %>% 
+  step_dummy(all_nominal(), -all_outcomes()) %>%
+  step_zv(all_predictors()) %>% #remove zero variance
+  step_normalize(all_predictors()) 
+rec_spec
+```
+
+## Polynomial Support Vector Machine Specification
+```{r}
+svm_poly_spec <- svm_poly(degree = tune()) %>%
+  set_mode("classification") %>%
+  set_engine("kernlab")
+svm_poly_spec
+```
+
+## Tune
+
+We try to find the optimal model's degree between 1 and 3.
+```{r}
+param_grid <- tibble(degree = c(1, 2, 3))
+```
+
+## K-fold
+
+We randomly splits the data into 5 groups.
+```{r}
+Carseats_folds <- vfold_cv(Carseats_train, v = 5)
+```
+
+## Workflow
+```{r}
+Carseats_wf <- workflow() %>%
+  add_recipe(rec_spec) %>%
+  add_model(svm_poly_spec)
+Carseats_wf 
+```
+
+```{r, message=FALSE}
+tune_res <- tune_grid(
+  Carseats_wf, 
+  resamples = Carseats_folds,
+  grid = param_grid,
+  control = control_grid(verbose = TRUE, save_pred = TRUE)
+)
+```
+
+```{r}
+autoplot(tune_res)
+```
+
+In the model tuning via grid search, degrees-1 is the best value based on the ROC curve and accuracy.
+```{r}
+collect_metrics(tune_res)
+```
+
+## Confusion Matrix
+
+If degree is at 1 in the first fold, the true No is 21, and the true Yes is 36.
+```{r}
+collect_predictions(tune_res) %>%
+  filter(id == "Fold1", degree == 1) %>%
+    conf_mat(truth = US, estimate = .pred_class) %>%
+  autoplot(type = "heatmap")
+```
+
+Folds 1 and 5 perform well in terms of sensitivity.
+```{r}
+collect_predictions(tune_res) %>%
+  filter(degree == 1) %>%
+    group_by(id) %>%
+    roc_curve(truth = US, estimate = .pred_No) %>%
+  autoplot(type = "heatmap") 
+```
+## Fit the Model
+
+We take the degree of 1 to fit the svm model.
+```{r}
+best_degree <- select_best(tune_res, "roc_auc")
+best_degree 
+```
+
+```{r}
+final_Carseats_wf <- finalize_workflow(Carseats_wf, best_degree)
+```
+
+```{r}
+final_fit <- fit(final_Carseats_wf, Carseats_train)
+final_fit 
+```
+
+In comparison to the training set, the accuracy is 0.87, which is not too shabby.
+```{r}
+augment(final_fit, new_data = Carseats_train) %>%
+  accuracy(truth = US, estimate = .pred_class)
+```
+
+Furthermore, when compared to the testing set, the model performs better, with an accuracy of 93 percent.
+```{r}
+augment(final_fit, new_data = Carseats_test) %>%
+  accuracy(truth = US, estimate = .pred_class)
+```
+
+# References
+- https://www.tmwr.org/pre-proc-table.html
+- https://recipes.tidymodels.org/articles/Ordering.html

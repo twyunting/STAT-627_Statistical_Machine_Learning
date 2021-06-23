@@ -1,0 +1,708 @@
+---
+title: "Statistical Machine Learning for Bitcoin Prediction"
+author: "Yunting Chiu, Haiman Wong"
+date: "`r Sys.Date()`"
+output:
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    theme: cerulean
+  pdf_document:
+    toc: yes
+    toc_depth: 2
+    fig_caption: yes
+subtitle: 'STAT-627 Project'
+urlcolor: blue
+linkcolor: red
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1. Abstract
+As Wall Street giants, retail investors, and aspiring cryptocurrency trailblazers continue to flood the cryptocurrency market, the ability to predict the volatility of cryptocurrency stocks has proven to be increasingly invaluable. In this report, we detail our methodology that applies statistical machine learning techniques to predict the direction of Bitcoin stocks. Our work also aims to build upon previous research conducted in anticipating trends within cryptocurrency using statistical machine learning methods. To predict whether the direction of Bitcoin stocks will increase or decrease on a given date, we employ Linear Discriminant Analysis (LDA), Quadratic Discriminant Analysis (QDA), K-Nearest Neighbors (KNN), Logistic Regression Analysis, Random Forest, and Decision Trees. We also perform statistical analyses of our dataset using simple linear regression, multiple linear regression, and summary statistics, and visualize these metrics to gain a more comprehensive understanding of the variables that may contribute to deciding the direction of Bitcoin stocks on a given day. Finally, we analyze our results and discuss opportunities for future work and research. 
+
+# 2. Install the Libraries
+```{r, message=FALSE}
+library(tidyverse)
+library(tidymodels)
+library(discrim)
+library(corrplot)
+library(rpart.plot)
+library(vip)
+library(ranger)
+```
+
+
+# 3. BitCoin Data 
+## Data Tidying and Cleaning
+
+The data spans the years 2013-10-01 to 2021-06-13 from [coindesk](https://www.coindesk.com/price/bitcoin).
+```{r}
+BTC <- read_csv("./data/BTC_USD_2013-10-01_2021-06-13-CoinDesk.csv")
+
+BTC %>%
+  rename(Closing_Price = "Closing Price (USD)",
+         Open_Price = "24h Open (USD)") %>%
+  mutate(Lag1 = (lag(Closing_Price, n = 1) - lag(Open_Price, n = 1)) / lag(Open_Price, n = 1)*100,
+         Lag2 = (lag(Closing_Price, n = 2) - lag(Open_Price, n = 2)) / lag(Open_Price, n = 2)*100,
+         Lag3 = (lag(Closing_Price, n = 3) - lag(Open_Price, n = 3)) / lag(Open_Price, n = 3)*100,
+         Lag4 = (lag(Closing_Price, n = 4) - lag(Open_Price, n = 4)) / lag(Open_Price, n = 4)*100,
+         Lag5 = (lag(Closing_Price, n = 5) - lag(Open_Price, n = 5)) / lag(Open_Price, n = 5)*100,
+         Return_Today = (Closing_Price - Open_Price) / Open_Price*100,
+         Direction_Today = ifelse(Return_Today > 0, "Up", "Down"),
+         Direction_Today = as.factor(Direction_Today)
+         ) -> BTC_tidied 
+
+names(BTC_tidied)
+head(BTC_tidied)
+tail(BTC_tidied)
+```
+
+## Data Dictionary
+
+|Variable          |Class     |Description |
+|:-----------------|:---------|:-----------|
+|Currency          |character    | Bitcoin or BTC|
+|Date              |date      | From  2013-10-01 to 2021-06-13|
+|Closing_Price     |double    | The price at the end of a trading day (24hr)|
+|Open_Price        |double    | The price at the beginning of a trading day (24hr)|
+|24h High (USD)    |double    | The day's highest price |
+|24h Low (USD)     |double    | The day's lowest price |
+|Lag1              |double    | Percentage return for previous day |
+|Lag2              |double    | Percentage return for 2 days previous |
+|Lag3              |double    | Percentage return for 3 days previous |
+|Lag4              |double    | Percentage return for 4 days previous |
+|Lag5              |double    | Percentage return for 5 days previous |
+|Return_Today      |double    | Percentage return for today |
+|Return_Direction  |factor    | A factor with levels Down and Up indicating whether the market had a positive or negative return on a given day |
+
+# 4. Data Analysis
+## Exploratory Data Analysis
+
+Drop NAs. Because we mutated `Lag1` to `Lag5`, resulting in 5 observations that include NAs.
+```{r}
+BTC_tidied %>%
+  drop_na() -> BTC_tidied
+```
+
+We can see that the vast majority of variables are numerical.
+```{r}
+str(BTC_tidied)
+```
+
+There are 2813 observations and 13 variables in the data set now.
+```{r}
+dim(BTC_tidied)
+```
+
+
+```{r}
+summary(BTC_tidied)
+```
+
+To understand the relationship between multiple variables in the dataset so we removed the non-numerical variables.
+```{r}
+correlation <- cor(BTC_tidied[, c(-1, -2, -13)])
+correlation
+```
+
+# 5. Data Visualization
+
+## Correlation Table
+When variables are visualized, it is easier to read the correlation between them. The `Closing_Price`, `Open_Price`, `24 High (USD)` and `24 Low (USD)` have a high correlation. Because `Direction_Today` is a response variable, if `Return_Today` is a predictor, which makes no sense. Thus, we just keep `Lag1`, `Lag2`, `Lag3`, `Lag4`, and `Lag5` as predictors in the initial stage.
+```{r}
+corrplot(correlation, method = "color", addCoef.col = "black", 
+         number.cex = 0.7)
+```
+
+## Bitcoin to the moon?
+```{r}
+BTC_tidied %>%
+  ggplot(aes(Date, Closing_Price)) +
+  geom_point(color = "blue") +
+  theme_bw()
+```
+
+```{r}
+BTC_tidied %>%
+  ggplot(aes(Date, Open_Price)) +
+  geom_point(color = "green") +
+  theme_bw()
+```
+
+## Variation of Date vs Return Today
+```{r}
+ggplot(data = BTC_tidied) +
+  geom_bar(mapping = aes(x = Date, y = Return_Today, fill = Date), stat = "identity")
+```
+
+## Frequency of Ups vs Downs in a Pie Chart
+
+```{r}
+cd <- ggplot(BTC_tidied, aes(x="", y = Return_Today, fill = Direction_Today))+
+  geom_bar(width = .5, stat = "identity") 
+pie <- cd + coord_polar("y", start = 0) 
+pie
+```
+
+# 6. Decision Tree and Random Forest
+## Decision Trees
+
+### Decision Tree Model 1 
+```{r}
+bc_split <- initial_split(BTC_tidied)
+set.seed(1234)
+bc_train <- training(bc_split)
+bc_test <- testing(bc_split)
+```
+
+```{r}
+decision_tree_rpart_spec <- 
+  decision_tree() %>%
+  set_engine('rpart') %>%
+  set_mode('classification')
+```
+
+```{r}
+dt_fit <- fit(decision_tree_rpart_spec, Direction_Today ~., data = bc_train)
+dt_fit
+```
+
+```{r}
+rpart.plot(dt_fit$fit)
+```
+
+### Decision Tree Model 2: Hyperparameter
+```{r}
+decision_tree_rpart_spec_lambda <-
+  decision_tree(cost_complexity = 0.5) %>%
+  set_engine('rpart') %>%
+  set_mode('classification')
+  
+dt_fit_lambda2 <- fit(decision_tree_rpart_spec_lambda, Direction_Today ~., data = bc_train)
+dt_fit_lambda2
+```
+
+```{r}
+rpart.plot(dt_fit_lambda2$fit)
+```
+
+### Decision Tree Model 3
+```{r}
+decision_tree_rpart_spec_lambda <-
+  decision_tree(cost_complexity = 3) %>%
+  set_engine('rpart') %>%
+  set_mode('classification')
+  
+dt_fit_lambda3 <- fit(decision_tree_rpart_spec_lambda, Direction_Today ~., data = bc_train)
+dt_fit_lambda3
+```
+
+```{r}
+rpart.plot(dt_fit_lambda3$fit)
+```
+
+### Decision Tree Model 4
+```{r}
+decision_tree_rpart_spec_lambda <-
+  decision_tree(cost_complexity = 1.5) %>%
+  set_engine('rpart') %>%
+  set_mode('classification')
+  
+dt_fit_lambda4 <- fit(decision_tree_rpart_spec_lambda, Direction_Today ~., data = bc_train)
+dt_fit_lambda4
+```
+
+```{r}
+rpart.plot(dt_fit_lambda4$fit)
+```
+
+```{r}
+vi(dt_fit)
+vip(dt_fit)
+```
+
+## Random Forest
+```{r}
+rand_forest_ranger_spec <- 
+  rand_forest() %>%
+  set_engine('ranger', importance = "impurity") %>%
+  set_mode('classification')
+rand_forest_ranger_spec
+```
+
+```{r}
+set.seed(4321)
+rf_fit <- fit(rand_forest_ranger_spec, Direction_Today ~., data = bc_train)
+rf_fit
+```
+
+```{r}
+vi(rf_fit$fit)
+vip(rf_fit$fit)
+```
+
+# 7. Data Modeling
+
+Before classifying `Direction_Today`, we can use linear regression models to examine the entire relationship between `Return_Today` and `Lags1` to `Lags5`. We will concentrate on its coefficients.
+
+## Multiple Linear Regression Model 
+```{r}
+btc_mlc <- lm(Return_Today ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5, data = BTC_tidied)
+btc_mlc
+```
+
+```{r}
+summary(btc_mlc)
+```
+
+```{r}
+par(mfrow = c(2, 2))
+plot(btc_mlc)
+```
+
+## Simple Linear Regression Model 1
+```{r}
+btc_slr <- lm(Return_Today ~ Lag1, data = BTC_tidied)
+btc_slr
+```
+
+```{r}
+summary(btc_slr)
+```
+
+## Simple Linear Regression Model 2
+```{r}
+btc_slr2 <- lm(Return_Today ~ Lag2, data = BTC_tidied)
+btc_slr2
+```
+
+```{r}
+summary(btc_slr2)
+```
+
+## Simple Linear Regression Model 3
+```{r}
+btc_slr3 <- lm(Return_Today ~ Lag3, data = BTC_tidied)
+btc_slr3
+```
+
+```{r}
+summary(btc_slr3)
+```
+
+## Simple Linear Regression Model 4
+```{r}
+btc_slr4 <- lm(Return_Today ~ Lag4, data = BTC_tidied)
+btc_slr4
+```
+
+```{r}
+summary(btc_slr4)
+```
+
+## Simple Linear Regression Model 5
+```{r}
+btc_slr5 <- lm(Return_Today ~ Lag5, data = BTC_tidied)
+btc_slr5
+```
+
+```{r}
+summary(btc_slr5)
+```
+
+## Data Splitting
+
+Now, we are going to use Logistic Regression, LDA, QDA, and KNN with the best neighbor to find the highest accuracy to predict `Direction_Today`.
+```{r}
+set.seed(1000)
+BTC_split <- initial_split(BTC_tidied)
+BTC_train <- training(BTC_split)
+BTC_test  <- testing(BTC_split)
+```
+
+## Logistic Regression Model
+### Logistic Model Specification
+```{r}
+lr_spec <- logistic_reg() %>%
+  set_engine("glm") %>%
+  set_mode("classification")
+lr_spec
+```
+
+### Model Formula
+
+According to the EDA above, we choose `Lag1`, `Lag2`, `Lag3`, `Lag4`, and `Lag5` as predictors at the beginning.
+```{r}
+rec_allpreds <- recipe(Direction_Today ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5, data = BTC_train)
+  # step_normalize(all_numeric_predictors())
+rec_allpreds
+```
+
+### Workflow
+```{r}
+lr_wf1 <- workflow() %>%
+  add_recipe(rec_allpreds) %>%
+  add_model(lr_spec)
+```
+### Model Fitting
+```{r}
+lr_fit1 <- fit(lr_wf1, data = BTC_train)
+lr_fit1
+```
+
+### Final Accuracy
+```{r}
+augment(lr_fit1, new_data = BTC_test) %>%
+  accuracy(truth = Direction_Today, estimate = .pred_class) %>%
+  mutate(description = "LR Model with Lag1 to Lag5") -> acc_lr_fit1
+acc_lr_fit1
+```
+
+```{r}
+augment(lr_fit1, new_data = BTC_test) %>%
+  conf_mat(truth = Direction_Today, estimate = .pred_class) %>%
+  autoplot(type = "heatmap")
+```
+
+
+## Coefficients Table
+
+Only two predictors are significant, and we know that predictors with a high p-value cause an increase in variance without a corresponding decrease in bias so we just keeping `Lag1` and `Lag3` as model predictors.
+```{r}
+lr_coef <- lr_spec %>%
+  fit(Direction_Today ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5, data = BTC_train)
+lr_coef$fit %>% 
+  tidy() %>%
+  mutate(sign_level = ifelse(p.value < 0.05, "Yes", "No")) 
+  # filter(sign_level == "Yes")
+```
+
+### Revised Model Formula
+
+We are now only using Lag1 and Lag3 as regressors. 
+```{r}
+rec <- recipe(Direction_Today ~ Lag1 + Lag3, data = BTC_train) 
+  # step_normalize(all_numeric_predictors())
+rec 
+```
+
+### Revised Workflow
+```{r}
+lr_wf2 <- workflow() %>%
+  add_recipe(rec) %>%
+  add_model(lr_spec)
+```
+
+### Model Fitting
+```{r}
+lr_fit2 <- fit(lr_wf2, data = BTC_train)
+lr_fit2
+```
+
+### Final Accuracy
+```{r}
+lr_fit2 <- fit(lr_wf2, data = BTC_train)
+augment(lr_fit2, new_data = BTC_test) %>%
+  accuracy(truth = Direction_Today, estimate = .pred_class) %>%
+  mutate(description = "LR Model with Lag1 and Lag3") -> acc_lr_fit2
+acc_lr_fit2
+```
+
+### Confusion Matricies
+
+As shown in the confusion matrix, the logistic regression model operate the two Lag variables as predictors. The predictions are represented by the rows of the confusion matrix, while the ground truth is represented by the columns. The up-left area represents true Down, and the down-right area represents true Up; these two values are a leading indicator for determining whether the model is right or wrong. The true Down is 42, which greater then the false Down 39, and the true UP is 344, which is greater than false negative 277. Compared to the observed data points, the predictions don’t work really well. The model just splitting approximately 50 % to the down and 50 % to the up direction.
+```{r}
+augment(lr_fit2, new_data = BTC_test) %>%
+  conf_mat(truth = Direction_Today, estimate = .pred_class) %>%
+  autoplot(type = "heatmap")
+```
+
+## Linear Discriminant Analysis Model
+### Linear Discriminant Model Specification
+```{r}
+# set LDA specification
+lda_spec <- discrim_linear() %>%
+  set_mode("classification") %>%
+  set_engine("MASS") # the default is "MASS", otherwise is "mda"
+lda_spec
+```
+
+### Workflow
+```{r}
+lda_wf1 <- workflow() %>%
+  add_recipe(rec) %>%
+  add_model(lda_spec)
+```
+
+### Model Fitting
+```{r}
+lda_fit1 <- fit(lda_wf1, data = BTC_train)
+lda_fit1
+```
+
+### Final Accuracy
+```{r}
+augment(lda_fit1, new_data = BTC_test) %>%
+  accuracy(truth = Direction_Today, estimate = .pred_class) %>%
+  mutate(description = "LDA Model with Lag1 and Lag3") -> acc_lda_fit1
+acc_lda_fit1
+```
+
+### Confusion Matricies
+
+The true Down is 40, which greater then the false Down 39, and the true UP is 344, which is greater than false negative 279 in LDA model.
+```{r}
+augment(lda_fit1, new_data = BTC_test) %>%
+  conf_mat(truth = Direction_Today, estimate = .pred_class) %>%
+  autoplot(type = "heatmap")
+```
+
+## Quadratic Discriminant Analysis Model
+### Quadratic Discriminant Model Specification
+```{r}
+# set QDA specification
+qda_spec <- discrim_regularized() %>%
+  set_mode("classification") %>%
+  set_args(frac_common_cov = 0, frac_identity = 0) %>%
+  set_engine("klaR")
+qda_spec
+```
+
+### Workflow
+```{r}
+qda_wf1 <- workflow() %>%
+  add_recipe(rec) %>%
+  add_model(qda_spec)
+```
+
+### Model Fitting
+```{r}
+qda_fit1 <- fit(qda_wf1, data = BTC_train)
+qda_fit1
+```
+
+### Final Accuracy
+```{r}
+augment(qda_fit1, new_data = BTC_test) %>%
+  accuracy(truth = Direction_Today, estimate = .pred_class) %>%
+  mutate(description = "QDA Model with Lag1 and Lag3") -> acc_qda_fit1
+acc_qda_fit1
+```
+
+### Confusion Matricies
+
+The true Down is 188, which less then the false Down 203, and the true UP is 180, which is greater than false negative 131 in QDA model.
+```{r}
+augment(qda_fit1, new_data = BTC_test) %>%
+  conf_mat(truth = Direction_Today, estimate = .pred_class) %>%
+  autoplot(type = "heatmap")
+```
+
+## Cross Validation in KNN Model 
+### Knn Model specification
+
+We will use `neighbors = tune()` in order to find the optimal **K** in the KNN model.
+```{r}
+knn_spec <- nearest_neighbor(neighbors = tune()) %>%
+  set_mode("classification") %>%
+  set_engine("kknn")
+knn_spec
+```
+
+### Centering and Scaling Formula
+
+Since we are using a K-nearest neighbor model, it is importance that the variables are centered and scaled to make sure that the variables have a uniform influence. We can accomplish this transformation with `step_normalize()`, which does centering and scaling in one go.
+```{r}
+rec_norm <- recipe(Direction_Today ~ Lag1 + Lag3, data = BTC_train) %>%
+  step_normalize(all_numeric_predictors())
+rec_norm
+```
+
+### Workflow
+```{r}
+knn_wf1 <- workflow() %>%
+  add_recipe(rec_norm) %>%
+  add_model(knn_spec)
+```
+### V-Fold Cross Validation
+
+Create the Cross-Validation term in order to use in the following `tune_grid()` session later, the number of default folds is 10.
+```{r}
+set.seed(1100)
+cv10 <- vfold_cv(BTC_train, strata = Direction_Today, v = 10)
+```
+
+```{r}
+# param_grid <- grid_regular(neighbors(), levels = 100)
+param_grid <- tibble(neighbors = 1:100)
+param_grid
+```
+
+### Tune the Best Neighbors
+```{r, message=FALSE}
+tune_res1 <- tune_grid(
+  object = knn_wf1,
+  resamples = cv10,
+  grid = param_grid, control = control_grid(verbose = TRUE)
+)
+```
+
+### Visualization
+
+Higher the AUC, the better the model is at predicting `Up` classes as `Up` and `Down` classes as `Down`, but we will focus on the model accuracy.
+When the Nearest Neighbors value is 1, the accuracy and will be the best. The ROC curve has the best performance when the Nearest Neighbors value is 8.
+```{r}
+autoplot(tune_res1) +
+  geom_vline(xintercept = 1, color = "red") +
+  geom_vline(xintercept = 8, color = "blue")
+```
+
+```{r}
+tune_res1 %>%
+  show_best(metric = "accuracy")
+tune_res1 %>%
+  show_best(metric = "roc_auc")
+```
+
+### Fit the model
+
+We will choose the best accuracy to fit the model. That is, use 1 as the k-nearest neighbors to fit the model.
+```{r}
+best_accuracy1 <- select_best(tune_res1, metric = "accuracy")
+best_accuracy1
+knn_final1 <- finalize_workflow(knn_wf1, best_accuracy1)
+```
+
+```{r}
+knn_fit1 <- fit(knn_final1, data = BTC_train)
+knn_fit1
+```
+
+### Final Accuracy
+```{r}
+augment(knn_fit1, new_data = BTC_test) %>%
+  accuracy(truth = Direction_Today, estimate = .pred_class) %>%
+  mutate(description = "KNN Model with Lag1 and Lag3 (CV)") -> acc_knn_fit1
+acc_knn_fit1
+```
+
+### Confusion Matricies
+
+The true Down is 148, which less then the false Down 173, and the true UP is 210, which is greater than false negative 170 in KNN with 1 neighbor model.
+```{r}
+augment(knn_fit1, new_data = BTC_test) %>%
+  conf_mat(truth = Direction_Today, estimate = .pred_class) %>%
+  autoplot(type = "heatmap")
+```
+
+## Bootstrapping in KNN Model
+### Bootstrap Sampling
+
+Use 25 `bootstraps` as the resamples data set.
+```{r}
+set.seed(1200)
+boots25 <- bootstraps(BTC_train, strata = Direction_Today, times = 25)
+```
+
+### Tune the Best Neighbors
+```{r, message=FALSE}
+tune_res2 <- tune_grid(
+  object = knn_wf1,
+  resamples = boots25,
+  grid = param_grid, control = control_grid(verbose = TRUE)
+)
+```
+
+### Visualization
+
+We can see the blue line that if the Nearest Neighbors is 1, the accuracy is the highest in bootstrap resampling. Thus, the best hyperparameter of this model might be 1.
+```{r}
+autoplot(tune_res2) +
+  geom_vline(xintercept = 1, color = "red") +
+  geom_vline(xintercept = 5, color = "blue")
+```
+
+```{r}
+tune_res2 %>%
+  show_best(metric = "accuracy")
+tune_res2 %>%
+  show_best(metric = "roc_auc")
+```
+
+### Fit the model
+
+The best accuracy value to fit the KNN model will be chosen. That is, use 10 as the k-nearest neighbors to fit the model.
+```{r}
+best_accuracy2 <- select_best(tune_res2, metric = "accuracy")
+best_accuracy2
+knn_final2 <- finalize_workflow(knn_wf1, best_accuracy2)
+```
+
+```{r}
+knn_fit2 <- fit(knn_final2, data = BTC_train)
+knn_fit2
+```
+
+### Final Accuracy
+```{r}
+augment(knn_fit2, new_data = BTC_test) %>%
+  accuracy(truth = Direction_Today, estimate = .pred_class) %>%
+  mutate(description = "KNN Model with Lag1 and Lag3 (Bootstrap)") -> acc_knn_fit2
+acc_knn_fit2
+```
+
+### Confusion Matricies
+
+The true Down is 149, which less then the false Down 173, and the true UP is 210, which is greater than false negative 170 in KNN with 1 neighbor model. The outcome is the same as the KNN model of Cross-Validation.
+```{r}
+augment(knn_fit2, new_data = BTC_test) %>%
+  conf_mat(truth = Direction_Today, estimate = .pred_class) %>%
+  autoplot(type = "heatmap")
+```
+
+# 8. Conclusion
+
+The outcomes of these six models are not very different. However,Logistic regression model is the reliable model of up and down direction in Bitcoin. Simply providing `Lag1` and `Lag3` as predictors causes the model to correctly predict the trend in **55 percent ** of the cases.
+```{r}
+com_table <- bind_rows(acc_lr_fit1, acc_lr_fit2, acc_lda_fit1,
+                       acc_qda_fit1, acc_knn_fit1, acc_knn_fit2)
+com_table %>%
+  arrange(desc(.estimate, everything()))
+```
+
+ROC is a probability curve, `roc_curve()` computes the data points that make up the ROC curve. However, The ROC curve demonstrates that the logistic regression model has a little difference in specificity and sensitivity.
+
+- Specificity: true negatives / all actual negatives
+- Sensitivity: true positives / all actual positives
+```{r}
+models <- list("Logistic Regression 1" = lr_fit1,
+               "Logistic Regression 2" = lr_fit2,
+               "LDA" = lda_fit1,
+               "QDA" = qda_fit1,
+               "KNN CV" = knn_fit1,
+               "KNN Boots" = knn_fit2
+               )
+preds <- imap_dfr(models, augment, 
+                  new_data = BTC_test, .id = "model")
+
+#preds %>%
+ # select(model, Direction_Today, .pred_class, .pred_Down, .pred_Up)
+#multi_metric <- metric_set(accuracy, sensitivity, specificity)
+#preds %>%
+ # group_by(model) %>%
+  #multi_metric(truth = Direction_Today, estimate = .pred_class)
+preds %>%
+  group_by(model) %>%
+  roc_curve(Direction_Today, .pred_Down) %>%
+  autoplot() +
+  labs(y = "Sensitivity (true positives/all actual positives)",
+       x = "Specificity (true negatives/all actual negatives)") 
+```
+
+# 9. References
+- James, G., Witten, D., Hastie, T., & Tibshirani, R. (2014).*An introduction to statistical learning: with applications in R / Gareth James, Daniela Witten, Trevor Hastie, Robert Tibshirani.*(Corrected edition.). Springer.
+- https://financeformulas.net/Total-Stock-Return.html
+- https://www.tmwr.org/
